@@ -57,12 +57,18 @@
 <!-- Format: NEVER [behavior] (affirmed [date]) -->
 <!-- Example: NEVER throw exceptions across service layer boundaries (affirmed 2026-05-17) -->
 
+NEVER commit signing keys, certificates or credentials; the repository is public (affirmed 2026-11-10)
+NEVER add a dependency or service that costs money or requires an account or sign-up (affirmed 2026-11-10)
+NEVER commit directly to main after the initial commit (affirmed 2026-11-10)
 ## Mandated
 
 <!-- Populated by practices-discovery affirmation gate. -->
 <!-- Format: ALWAYS [behavior] (affirmed [date]) -->
 <!-- Example: ALWAYS use Result<T,E> for fallible operations in service layer (affirmed 2026-05-17) -->
 
+ALWAYS make new behaviour visible in the app's built-in diagnostics, because there is no Mac to debug from (affirmed 2026-11-10)
+ALWAYS explain non-obvious code in plain language, because the owner relies on AI-written code (affirmed 2026-11-10)
+ALWAYS provide an on-device checklist with any delivery that changes sensor-dependent behaviour (affirmed 2026-11-10)
 ## Corrections
 
 <!-- Project-specific corrections from human feedback. -->
