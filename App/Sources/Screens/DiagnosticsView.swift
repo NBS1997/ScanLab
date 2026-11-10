@@ -18,11 +18,29 @@ struct DiagnosticsView: View {
                 Button("Export sample model…", systemImage: "cube") {
                     showingSampleExport = true
                 }
+                Button {
+                    Task { await model.addSampleToLibrary() }
+                } label: {
+                    if model.isAddingSample {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                            Text("Adding sample…")
+                        }
+                    } else {
+                        Label("Add sample to library", systemImage: "plus.square.on.square")
+                    }
+                }
+                .disabled(model.isAddingSample)
+                .accessibilityHint("Saves the sample model as a scan, so the library can be tried.")
+                if let message = model.sampleMessage {
+                    Label(message, systemImage: model.sampleFailed ? "exclamationmark.triangle" : "checkmark.circle")
+                        .foregroundStyle(model.sampleFailed ? .red : .green)
+                }
             } header: {
                 Text("Sample model")
             } footer: {
                 let size = Units.formatDimensions(SampleMeshes.stepBlockSize)
-                Text("A built-in \(size) stepped block, for trying export before scanning arrives.")
+                Text("A built-in \(size) stepped block, for trying export and the library before scanning arrives.")
             }
 
             Section {

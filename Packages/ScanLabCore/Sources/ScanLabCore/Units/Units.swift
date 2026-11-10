@@ -32,6 +32,25 @@ public enum Units {
         return count == 1 ? "1 face" : "\(number) faces"
     }
 
+    /// A storage size the way the phone's own Settings shows it, counting 1,000 bytes
+    /// to a kilobyte: "820 bytes", "4.8 MB", "212 MB", "1.2 GB". One decimal below 10,
+    /// whole numbers above, so a list of sizes stays short.
+    public static func storage(_ bytes: Int64) -> String {
+        let value = Double(max(bytes, 0))
+        let steps: [(limit: Double, unit: String)] = [(1e3, "KB"), (1e6, "MB"), (1e9, "GB"), (1e12, "TB")]
+        guard value >= 1_000 else {
+            return value == 1 ? "1 byte" : "\(Int(value)) bytes"
+        }
+        var chosen = steps[0]
+        for step in steps where value >= step.limit {
+            chosen = step
+        }
+        let amount = value / chosen.limit
+        // Decide the decimals after rounding, so 9.96 MB shows as "10 MB", not "10.0 MB".
+        let decimals = (amount * 10).rounded() < 100 ? 1 : 0
+        return number(amount, decimals: decimals) + " " + chosen.unit
+    }
+
     /// Metres when any value would show as 1,000.0 mm or more. Deciding after
     /// rounding avoids showing "1,000.0 mm" for 0.99999 m.
     private static func usesMetres(_ values: [Double]) -> Bool {

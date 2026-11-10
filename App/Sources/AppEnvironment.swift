@@ -10,19 +10,24 @@ struct AppEnvironment: Sendable {
     /// The live camera and depth sensor (U06). It is shared: a screen starts it when
     /// it appears and stops it when it disappears.
     let sensorFeed: any LiveCameraFeeding
+    /// The saved scans (LibraryService, unit U05): the single owner of scan data.
+    let library: ScanLibrary
 
     /// The real app.
     @MainActor
     static func live() -> AppEnvironment {
         let log = FileLog(directory: FileLog.standardDirectory())
+        let store = FileScanStore(root: FileScanStore.standardDirectory(), log: log)
         return AppEnvironment(
             log: log,
             buildInfo: BuildInfo(infoDictionary: Bundle.main.infoDictionary ?? [:]),
-            sensorFeed: LiveSensorFeed(log: log)
+            sensorFeed: LiveSensorFeed(log: log),
+            library: ScanLibrary(store: store, log: log, availableBytes: { store.availableCapacity() })
         )
     }
 
-    /// For SwiftUI previews: an in-memory log, a fixed build date and a made-up sensor.
+    /// For SwiftUI previews: an in-memory log and library, a fixed build date and a
+    /// made-up sensor.
     @MainActor
     static func preview() -> AppEnvironment {
         let log = MemoryLog()
@@ -31,7 +36,8 @@ struct AppEnvironment: Sendable {
         return AppEnvironment(
             log: log,
             buildInfo: BuildInfo(version: "0.1.0", build: "1", buildDate: Date().addingTimeInterval(-29 * 86_400)),
-            sensorFeed: PreviewSensorFeed()
+            sensorFeed: PreviewSensorFeed(),
+            library: ScanLibrary(store: MemoryScanStore(), log: log)
         )
     }
 }

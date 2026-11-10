@@ -70,6 +70,31 @@ final class DiagnosticsModel {
             loadMesh: { SampleMeshes.stepBlock() })
     }
 
+    /// Shown under "Add sample to library" until the next attempt.
+    private(set) var sampleMessage: String?
+    private(set) var sampleFailed = false
+    private(set) var isAddingSample = false
+
+    /// Saves the built-in sample as a scan (method "sample"), so the library, Scan
+    /// detail, rename and delete can be tried before capture exists (Bolt 5). The
+    /// library logs the result; the model is built off the main thread.
+    func addSampleToLibrary() async {
+        guard !isAddingSample else { return }
+        isAddingSample = true
+        defer { isAddingSample = false }
+        sampleMessage = nil
+        let mesh = await Task.detached(priority: .userInitiated) { SampleMeshes.stepBlock() }.value
+        do {
+            let scan = try await environment.library.add(mesh: mesh, method: .sample)
+            sampleFailed = false
+            sampleMessage = "Added \u{201C}\(scan.name)\u{201D} to the library."
+        } catch {
+            sampleFailed = true
+            sampleMessage = error.localizedDescription
+        }
+        await reload()
+    }
+
     /// Called when the owner taps Export log.
     func recordExportTapped() {
         environment.log.info("log", "Log export opened", ["events": String(totalEvents)])
