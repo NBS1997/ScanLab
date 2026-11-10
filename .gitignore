@@ -9,3 +9,23 @@ aidlc-docs/.aidlc-sensors/
 .claude/settings.local.json
 .claude/worktrees/
 .claude/scheduled_tasks.lock
+
+# ---- AI-DLC Construction worktrees ----
+.aidlc/
+
+# ---- Signing material (never commit; the repository is public) ----
+*.p12
+*.p8
+*.key
+*.cer
+*.mobileprovision
+
+# ---- Generated and build output ----
+*.xcodeproj/
+App/Info.plist
+.build/
+.swiftpm/
+DerivedData/
+/build/
+/dist/
+*.ipa

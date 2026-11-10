@@ -1,0 +1,60 @@
+# Checks every push and pull request (ADR-016, team practice "Code Style" and
+# "Testing Posture"). Delivery to TestFlight is separate: builder's ios-build.yml,
+# triggered by `builder ios release` from the owner's PC.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: No signing material in the repository
+        run: |
+          if git ls-files | grep -E -i '\.(p12|p8|key|cer|mobileprovision)$'; then
+            echo "::error::Signing material is tracked in git. Remove it and rotate it."
+            exit 1
+          fi
+
+      - name: Tool versions
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Lint (SwiftLint)
+        run: |
+          command -v swiftlint >/dev/null || brew install swiftlint
+          swiftlint version
+          swiftlint lint --strict --reporter github-actions-logging
+
+      - name: Format check (swift-format)
+        run: swift format lint --strict --recursive App/Sources Packages/ScanLabCore
+
+      - name: Core tests with coverage
+        run: swift test --package-path Packages/ScanLabCore --enable-code-coverage
+
+      - name: Coverage at least 80% on Core
+        run: bash scripts/check-coverage.sh 80
+
+      - name: Compile the app for the device (unsigned)
+        run: |
+          set -o pipefail
+          command -v xcodegen >/dev/null || brew install xcodegen
+          xcodegen generate
+          xcodebuild -project ScanLab.xcodeproj -scheme ScanLab \
+            -destination 'generic/platform=iOS' -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO build | tail -n 40

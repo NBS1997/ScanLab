@@ -1,0 +1,23 @@
+included:
+  - App/Sources
+  - Packages/ScanLabCore/Sources
+  - Packages/ScanLabCore/Tests
+
+# Formatting is swift-format's job; these rules would fight it.
+disabled_rules:
+  - trailing_comma
+  - opening_brace
+  - multiple_closures_with_trailing_closure
+
+line_length:
+  warning: 120
+  error: 160
+
+custom_rules:
+  # Business rule BR-8 and ADR-011: everything goes through the Logging port, so it
+  # reaches the on-phone diagnostics log. Console output is invisible without a Mac.
+  no_console_output:
+    name: "No console output"
+    regex: '\b(print|debugPrint|NSLog)\('
+    message: "Use the Logging port (log.info / log.warning / log.error) instead of console output."
+    severity: error

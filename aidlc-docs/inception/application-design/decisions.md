@@ -25,8 +25,9 @@ target. When code lands, the scribe copies the active records into `docs/DECISIO
 | 011 | Append-only diagnostics log behind a single logging port | Easy |
 | 012 | Edge detection with the Vision framework on camera frames | Easy |
 | 013 | Mesh simplification and STL/OBJ writers implemented in Core | Easy |
-| 014 | Reuse the fishing app's build workflow; deliver on merge; monthly scheduled build | Easy |
+| 014 | ~~Reuse the fishing app's build workflow; deliver on merge; monthly scheduled build~~ Superseded by ADR-016 | Easy |
 | 015 | App named ScanLab; repository licensed MIT | Easy |
+| 016 | Deliver with the builder CLI from the PC after each Bolt merge; CI checks on every push | Easy |
 
 ---
 
@@ -275,6 +276,8 @@ but its behaviour could only be checked on the phone and it offers no simplifica
 
 ## ADR-014: Reuse the fishing app's build workflow; deliver on merge; monthly rebuild
 
+**Status:** Superseded by ADR-016 (2026-11-10, Bolt 1).
+
 **Context:** A working build-and-deliver workflow exists in the Nathans Fishing App
 repository (feasibility Q3). The team practice is delivery on every merge; builds expire
 after 90 days (V8).
@@ -305,6 +308,35 @@ names differ, which the documentation must state once.
 licence* — public code with no stated rights invites confusion.
 **Security:** None.
 **Reversibility:** Easy.
+
+## ADR-016: Deliver with the builder CLI from the PC; CI checks on every push
+
+**Status:** Active (2026-11-10, Bolt 1). Supersedes ADR-014.
+**Context:** At the start of Bolt 1 it turned out that the owner's existing
+GitHub-to-TestFlight setup is the **builder** command-line tool (v0.11.0) on the Windows
+PC, not a self-contained workflow. Its GitHub workflow (`ios-build.yml`, installed by
+`builder init`) only builds and signs; uploading to App Store Connect and handing the
+build to TestFlight is done from the PC with an App Store Connect API key stored there.
+`builder signing setup` creates certificates and profiles and stores them as repository
+secrets with no Mac. ADR-014 assumed delivery would happen inside GitHub on every merge.
+**Decision:** Owner's choice (Bolt 1 Q1-A). A separate `ci.yml` runs the secrets check,
+lint, format, Core tests with coverage and an unsigned app compile on every push and pull
+request. After each Bolt merges, the agent runs `builder ios release --profile store`
+from the PC, which builds a snapshot on GitHub, uploads, waits for processing and adds
+the build to the internal TestFlight group. `ios-build.yml` is builder-managed and not
+edited by hand. The monthly rebuild (FR-1.4) becomes a reminder on the PC.
+**Consequences:** The App Store Connect key never enters the public repository. Every
+merge is still delivered, but by the agent, not by GitHub; delivery depends on the PC and
+the builder tool. The team practice "every merge delivers automatically" is met in
+effect, not literally, and is recorded as a project-level decision.
+**Alternatives rejected:** *Upload from GitHub on merge* (ADR-014) — requires putting the
+App Store Connect key in a public repository's secrets, and a hand-written upload step
+the owner's tool already provides. *Write our own workflow* — re-solves signing that
+builder already handles.
+**Security:** Key material stays in `C:\Users\natys\.scanlab-signing` and builder's
+credential store; only the signing secrets are in GitHub, never echoed and not given to
+forked pull requests. `.gitignore` and a CI step block key files.
+**Reversibility:** Easy — an upload step can be added to a workflow later.
 
 ## Not Applicable
 

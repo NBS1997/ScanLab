@@ -44,6 +44,9 @@
 
 ## Decided
 
+DECIDED: Delivery to TestFlight is by `builder ios release --profile store` run from the owner's PC after each Bolt merges; GitHub runs CI checks on every push. This replaces "every merge delivers automatically" from team practices (ADR-016; Bolt 1 code-generation, 2026-11-10)
+DECIDED: GitHub repository NBS1997/ScanLab (public); bundle ID com.nbs1997.scanlab (Bolt 1, 2026-11-10)
+
 <!-- Decisions made in earlier stages that should not be re-asked. -->
 <!-- Format: DECIDED: [decision] (Stage [slug], [date]) -->
 

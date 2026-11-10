@@ -31,6 +31,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   resolveProjectDir,
   readStateFile,
@@ -85,7 +86,9 @@ function spawnSibling(
     "bun",
     [
       "run",
-      new URL(`./${toolName}`, import.meta.url).pathname,
+      // fileURLToPath, not .pathname: on Windows .pathname yields "/C:/..."
+      // which bun cannot resolve.
+      fileURLToPath(new URL(`./${toolName}`, import.meta.url)),
       "--project-dir",
       pd,
       ...subargs,

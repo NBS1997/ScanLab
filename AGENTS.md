@@ -3,15 +3,24 @@
 Shared instructions for every coding agent on this repo. Don't add a `CLAUDE.md` or
 `CLAUDE.local.md` anywhere: Claude Code reads those instead and silently ignores this file.
 
-~~primary-language project using ~~framework. ~~package-manager for dependencies,
-minimum runtime ~~min-runtime-version. Source lives in `~~source-dir`.
+The app is **ScanLab** (GitHub `NBS1997/ScanLab`, bundle ID `com.nbs1997.scanlab`).
+Swift 6 project using SwiftUI. Swift Package Manager for the Core package; no
+third-party code ships in the app (ADR-008). Minimum iOS 26.0, built with Xcode 26.
+Source lives in `App/Sources` (app, adapters, screens) and
+`Packages/ScanLabCore/Sources` (sensor-independent logic). The Xcode project is
+generated from `project.yml` by XcodeGen.
 
 ## Commands
 
+There is no Mac and no local Swift toolchain: these run on GitHub's macOS runners
+(`.github/workflows/ci.yml`) on every push.
+
 ```bash
-~~test-command      # run the test suite
-~~lint-command      # lint and format check
-~~build-command     # build
+swift test --package-path Packages/ScanLabCore --enable-code-coverage   # Core tests
+scripts/check-coverage.sh 80                                             # coverage floor
+swiftlint lint --strict && swift format lint --strict --recursive App/Sources Packages/ScanLabCore
+xcodegen generate && xcodebuild -scheme ScanLab -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build
+builder ios release --profile store    # from the Windows PC: signed build, upload, TestFlight
 ```
 
 ## Critical Rules
@@ -24,7 +33,12 @@ If it grows past that, the extras belong in `docs/CONVENTIONS.md`.
 2. **Read before you change** — check `docs/DECISIONS.md` before refactoring anything
    that looks suboptimal. It may be deliberate.
 3. **Every bug fix gets a regression test** that fails without the fix.
-4. *(Add rules as you discover them. Each one line. Each one earned by a real failure.)*
+4. **Core never imports sensor or UI frameworks** — only Foundation. Sensor code lives in
+   App adapters behind Core's ports (ADR-003).
+5. **No console output** — log through the `Logging` port so it reaches the on-phone
+   diagnostics log (ADR-011; enforced by SwiftLint).
+6. **Never commit signing material** — key files live in `C:\Users\natys\.scanlab-signing`;
+   `.github/workflows/ios-build.yml` is managed by `builder`, not edited by hand.
 
 ## Documentation Map
 
@@ -58,7 +72,7 @@ copied from `ewd-driver-app` on 2026-11-10. Requires `bun` on the PATH.
 
 - Default branch is `main`. Branch before committing; don't commit to it
   directly.
-- Run `~~test-command` after changes. A change with a failing suite isn't finished.
+- Push and check the CI run after changes. A change with a failing run isn't finished.
 - When you make a decision worth remembering, record it as an ADR in
   `docs/DECISIONS.md` while it's still fresh.
 - When a documented rule gets in your way, add a row to the Friction Log in
