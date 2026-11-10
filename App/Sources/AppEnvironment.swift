@@ -19,6 +19,8 @@ struct AppEnvironment: Sendable {
     /// Sweep capture with the depth sensor (U07). Shares the camera with Explore, so
     /// only one of them runs at a time.
     let sweepCapture: any LiveSweepCapturing
+    /// Photo capture with Apple's Object Capture (unit U08).
+    let photoCapture: any PhotoCapturing
 
     /// Runs accuracy checks (AccuracyService in services.md).
     var accuracy: AccuracyService {
@@ -37,7 +39,8 @@ struct AppEnvironment: Sendable {
             library: ScanLibrary(store: store, log: log, availableBytes: { store.availableCapacity() }),
             reference: BundledReference(log: log),
             calipers: CaliperStore(url: CaliperStore.standardURL()),
-            sweepCapture: ARKitSweepCapture(log: log)
+            sweepCapture: ARKitSweepCapture(log: log),
+            photoCapture: ObjectCapturePhotoCapture(log: log)
         )
     }
 
@@ -55,7 +58,8 @@ struct AppEnvironment: Sendable {
             library: ScanLibrary(store: MemoryScanStore(), log: log),
             reference: BundledReference(log: log),
             calipers: CaliperStore(url: URL.temporaryDirectory.appending(path: "ScanLabPreview-calipers.json")),
-            sweepCapture: PreviewSweepCapture()
+            sweepCapture: PreviewSweepCapture(),
+            photoCapture: PreviewPhotoCapture()
         )
     }
 }

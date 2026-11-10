@@ -30,6 +30,7 @@ struct NewScanView: View {
 
     @State private var capturing = false
     @State private var savedScan: UUID?
+    @State private var photosShown = false
 
     var body: some View {
         List {
@@ -44,12 +45,17 @@ struct NewScanView: View {
                 .buttonStyle(.plain)
                 .accessibilityHint("Opens the camera to sweep a subject")
 
-                if let photoCapture {
-                    NavigationLink {
-                        photoCapture()
+                if photoCapture != nil {
+                    // Full screen like Sweep: the photo screen brings its own navigation
+                    // bar with Close and Done, so it must not be pushed inside this one.
+                    Button {
+                        environment.log.info("ui", "Capture method chosen", ["method": CaptureMethod.photos.rawValue])
+                        photosShown = true
                     } label: {
                         photosRow(reason: nil)
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Opens the camera to photograph a small part")
                 } else {
                     // A real button, switched off, so the screen reader says "dimmed".
                     Button {
@@ -84,6 +90,11 @@ struct NewScanView: View {
             CaptureView(model: CaptureModel(environment: environment)) { scan in
                 savedScan = scan
                 capturing = false
+            }
+        }
+        .fullScreenCover(isPresented: $photosShown) {
+            if let photoCapture {
+                photoCapture()
             }
         }
         .onAppear {

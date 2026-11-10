@@ -142,6 +142,11 @@ struct ScanDetailView: View {
                     LabeledContent("Size", value: ScanText.size(scan))
                     LabeledContent("Faces", value: Units.faceCount(scan.faceCount))
                     LabeledContent("Raw capture", value: ScanText.rawCapture(scan, storage: model.storage))
+                    if let rawBytes = model.storage?.rawCaptureBytes, rawBytes > 0 {
+                        // FR-7.5: the photos and camera positions of a photo scan (unit U08).
+                        RawCaptureExportRow(
+                            environment: model.environment, scanID: scan.id, scanName: scan.name, rawBytes: rawBytes)
+                    }
                     LabeledContent("On this phone", value: model.storage.map { Units.storage($0.totalBytes) } ?? "—")
                     LabeledContent(
                         "Saved", value: scan.createdAt.formatted(date: .abbreviated, time: .shortened))

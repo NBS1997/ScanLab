@@ -141,6 +141,22 @@ struct FileScanStore: ScanStoring {
         return StorageUse(modelBytes: max(total - rawBytes, 0), rawCaptureBytes: rawBytes)
     }
 
+    /// Moves the raw-capture folder to `RawCapture/` inside the scan's folder. Both are
+    /// in Application Support on the same storage, so this is a rename: instant, and
+    /// it needs no extra space however large the capture is.
+    func attachRawCapture(from source: URL, to id: UUID) throws {
+        let destination = try existingFolder(id).appending(path: Self.rawCaptureName, directoryHint: .isDirectory)
+        let manager = FileManager.default
+        do {
+            if manager.fileExists(atPath: destination.path()) {
+                try manager.removeItem(at: destination)
+            }
+            try manager.moveItem(at: source, to: destination)
+        } catch {
+            throw Self.classify(error)
+        }
+    }
+
     func reportData(for id: UUID) throws -> Data? {
         let url = try existingFolder(id).appending(path: Self.reportName)
         guard FileManager.default.fileExists(atPath: url.path()) else { return nil }
@@ -159,6 +175,21 @@ struct FileScanStore: ScanStoring {
         } catch {
             throw Self.classify(error)
         }
+    }
+
+    func removeRawCapture(for id: UUID) throws {
+        let raw = try existingFolder(id).appending(path: Self.rawCaptureName, directoryHint: .isDirectory)
+        guard FileManager.default.fileExists(atPath: raw.path()) else { return }
+        do {
+            try FileManager.default.removeItem(at: raw)
+        } catch {
+            throw Self.classify(error)
+        }
+    }
+
+    func rawCaptureFolder(for id: UUID) -> URL? {
+        let raw = folder(for: id).appending(path: Self.rawCaptureName, directoryHint: .isDirectory)
+        return FileManager.default.fileExists(atPath: raw.path()) ? raw : nil
     }
 
     // MARK: - Helpers

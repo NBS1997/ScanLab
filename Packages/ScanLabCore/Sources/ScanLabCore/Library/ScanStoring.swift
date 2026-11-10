@@ -102,6 +102,28 @@ public protocol ScanStoring: Sendable {
 
     /// Stores the scan's accuracy report in one step, replacing any earlier one.
     func replaceReport(_ report: Data, for id: UUID) throws
+
+    /// Moves a finished raw-capture folder (photographs and camera positions, unit U08)
+    /// into the scan, replacing any raw capture it had. Afterwards `folder` is gone.
+    func attachRawCapture(from folder: URL, to id: UUID) throws
+
+    /// Removes the scan's raw capture, if it has one, freeing its storage (FR-6.6).
+    func removeRawCapture(for id: UUID) throws
+
+    /// Where the scan's kept raw capture is, or `nil` when it has none (FR-7.5).
+    func rawCaptureFolder(for id: UUID) -> URL?
+}
+
+/// Stores that cannot hold raw captures still work for everything else: these answers
+/// say so plainly instead of pretending to succeed.
+extension ScanStoring {
+    public func attachRawCapture(from folder: URL, to id: UUID) throws {
+        throw StoreError.writeFailed("this storage cannot keep raw captures")
+    }
+
+    public func removeRawCapture(for id: UUID) throws {}
+
+    public func rawCaptureFolder(for id: UUID) -> URL? { nil }
 }
 
 /// A store kept in memory, for tests and screen previews. It can be told to fail, so
@@ -114,6 +136,7 @@ public final class MemoryScanStore: ScanStoring, @unchecked Sendable {
     private var meshes: [UUID: Data] = [:]
     private var thumbnails: [UUID: RGBAImage] = [:]
     private var rawCaptures: [UUID: Int64] = [:]
+    private var rawCaptureFolders: [UUID: URL] = [:]
     private var reports: [UUID: Data] = [:]
     private var failure: StoreError?
 
@@ -180,6 +203,7 @@ public final class MemoryScanStore: ScanStoring, @unchecked Sendable {
             meshes[id] = nil
             thumbnails[id] = nil
             rawCaptures[id] = nil
+            rawCaptureFolders[id] = nil
             reports[id] = nil
         }
     }
@@ -190,6 +214,31 @@ public final class MemoryScanStore: ScanStoring, @unchecked Sendable {
             let model = manifest.count + (meshes[id]?.count ?? 0) + (thumbnails[id]?.bytes.count ?? 0)
             return StorageUse(modelBytes: Int64(model), rawCaptureBytes: rawCaptures[id] ?? 0)
         }
+    }
+
+    /// Records the folder's size and location; the folder itself stays where it is,
+    /// since this store keeps nothing on disk.
+    public func attachRawCapture(from folder: URL, to id: UUID) throws {
+        let bytes = RawCaptureFiles.bytes(in: folder)
+        try lock.withLock {
+            if let failure { throw failure }
+            guard manifests[id] != nil else { throw StoreError.notFound(id) }
+            rawCaptures[id] = bytes
+            rawCaptureFolders[id] = folder
+        }
+    }
+
+    public func removeRawCapture(for id: UUID) throws {
+        try lock.withLock {
+            if let failure { throw failure }
+            guard manifests[id] != nil else { throw StoreError.notFound(id) }
+            rawCaptures[id] = nil
+            rawCaptureFolders[id] = nil
+        }
+    }
+
+    public func rawCaptureFolder(for id: UUID) -> URL? {
+        lock.withLock { rawCaptureFolders[id] }
     }
 
     public func reportData(for id: UUID) throws -> Data? {

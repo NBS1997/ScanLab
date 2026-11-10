@@ -1,0 +1,33 @@
+# Business Rules — U08 Photo Capture
+
+Inputs: `unit-of-work.md` (U08), `unit-of-work-dependency.md` (U08 → U05), `requirements.md` (FR-4.1–4.4, FR-6.6, FR-7.5, Open Question 3, NFR-2, NFR-3, NFR-9), `platform-verification.md` (V4, V12), `stories.md` (US-07, US-11), `components.md` and `component-methods.md` (`PhotoCapturing`, `ObjectCapturePhotoCapture`), `decisions.md` (ADR-003, ADR-006, ADR-007, ADR-011), `bolt-plan.md` (Bolt 7), `mockups.md`, `interaction-spec.md`, `accessibility-checklist.md`; Apple documentation for `ObjectCaptureSession`, `ObjectCaptureView`, `PhotogrammetrySession` (read 2026-11-11).
+
+| ID | Rule | Source | Enforced by |
+|---|---|---|---|
+| PC-1 | The capture follows one state machine: preparing → capturing → finishing → ready to build → building → saving → asking to keep → done; or failed / cancelled. An event that does not fit the current state is refused and logged ("Photo event ignored"). | US-07, ADR-006 | `PhotoCaptureFlow`, `PhotoCaptureModel.apply` |
+| PC-2 | At least 10 photographs are needed to build. Fewer ends the capture with "only N photographs were taken" and the photos are removed. 10 is ScanLab's own floor (Apple publishes none) and is an assumption to revisit. | FR-4.1 | `PhotoCaptureFlow.minimumImages` |
+| PC-3 | From "ready to build" onwards the photographs are complete on disk. A build that fails or is cancelled keeps them and offers **Build again**, which reuses the platform's checkpoint folder, so nothing is captured again (FR-4.3). An unsupported phone, a refused camera or too few photos never offer Build again. | FR-4.3, ADR-006 | `PhotoCaptureFlow` (`canBuildAgain`) |
+| PC-4 | Build progress is clamped to 0–100%, never goes backwards, and is shown with the stage and the platform's time-left estimate. If no update arrives for 10 s the screen says "Still working. Last update N s ago." | FR-4.3 | `PhotoCaptureFlow.advance`, `PhotoBuildText` |
+| PC-5 | The model is built at `.reduced`, the only detail level the iPhone offers; the level is stored in the scan's manifest ("reduced") and shown during building, in the keep question and on Scan detail ("Photos · reduced detail"). | FR-4.2, V4 | `PhotoDetailLevel`, `ScanLibrary.add(detail:)` |
+| PC-6 | The built model is read from OBJ in metres, corners at identical positions are merged, it is turned from y-up to z-up (`convertedFromYUp`) and saved with method Photos. A model with no faces is "no model". A size outside 2 mm–2 m is logged as a warning but still saved: true size is judged by calipers (FR-4.4). | FR-4.1, FR-4.4, SL-13 | `PhotoModelImport` |
+| PC-7 | After saving, the capture folder is reduced to the photographs, `camera-positions.csv` and a README; working data and the built model are removed. The keep question then shows the photo count and the storage this uses, once per capture. Nothing to keep (no photos) ends without asking. | FR-6.6, FR-7.5 | `RawCaptureFiles.prepareForKeeping`, `PhotoCaptureFlow` |
+| PC-8 | **Keep** moves the folder into the scan as `RawCapture/` (a rename on the same storage: no extra space) and records its size in the manifest; Delete then frees it and the scan's storage figure includes it. **Discard** removes the folder. A failure to keep does not offer Build again (that would make a second scan) but offers Discard capture. | FR-6.6, NFR-9 | `ScanLibrary.keepRawCapture`, `FileScanStore.attachRawCapture` |
+| PC-9 | Capture folders live in Application Support/PhotoCaptures (never emptied by the system). A folder with photos left from earlier is offered first as **Unfinished capture** (Build it now / Discard it); empty leftovers are removed silently. | FR-4.3 | `RawCaptureFiles.unfinished`, `PhotoCaptureModel.begin` |
+| PC-10 | Cancel during capture removes the photos (after the platform session has stopped, so nothing is deleted while being written). Cancel during building keeps them. Closing mid-build asks first; the photos are then offered next time (PC-9). | interaction-spec (Capture) | `PhotoCaptureModel.cancel`, `PhotoCaptureView` |
+| PC-11 | Background building is observed, not assumed (Open Question 3): when the app leaves during a build the progress is noted, the system's ordinary extra running time is requested (no entitlement), and on return the time away, the progress before and after, and any ending (built / failed / stopped) are logged as "Background build observed" and shown on screen. Expiry of the extra time is logged as "Background time used up". | FR-4.3, Open Question 3 | `BackgroundBuildObserver`, `PhotoCaptureModel.scenePhaseChanged` |
+| PC-12 | Raw-capture export packs `RawCapture/` into "<scan name> raw capture.zip" with the system's file coordinator (no third-party code) and opens the save chooser. It refuses before starting when free space is under twice the raw size plus 2 MB. The zip is removed from temporary storage afterwards. | FR-7.5, NFR-9 | `RawCaptureExporter` |
+| PC-13 | Errors are typed and each has a reason and next step: unsupported device, camera denied, too few photos, capture failed, build failed, no model, storage full, file failure, cancelled. Platform "insufficient storage" and file-system "disk full" both become storage full. | Q3-A, NFR-9 | `PhotoCaptureError`, `ObjectCapturePhotoCapture.translate` |
+| PC-14 | Every step is logged under `photo` (opened, camera permission, capture started, advice changes, scan pass complete, capture completed with photo count, build started, progress each 10%, request finished/failed, photos skipped, OBJ fallback, build finished with route and seconds, scan saved with faces and size, raw capture kept/discarded, zip written/exported, background observations, cancel, close). Photographs and file contents are never logged. | Project rule, ADR-011 | `PhotoCaptureModel`, `ObjectCapturePhotoCapture`, `RawCaptureExporter`, `ScanLibrary` |
+
+## Decisions Made in This Unit
+
+- **OBJ first, USDZ fallback.** Apple documents that giving `modelFile` a folder writes
+  OBJ. If that request fails on the phone, the build is repeated once as USDZ (reusing
+  the checkpoint) and converted with Model I/O. The route used is logged.
+- **Camera positions from the `.poses` request**, written as CSV (position in metres,
+  rotation quaternion, and pinhole intrinsics when iOS 26 reports them).
+- **The capture screen holds the platform session directly.** `ObjectCaptureView` needs
+  the concrete `ObjectCaptureSession`, so the port covers support, permission and
+  building, and the guided capture lives in the App with the adapter.
+- **Zip, not a folder**, for raw-capture export: one file through the save chooser,
+  made by `NSFileCoordinator`'s `.forUploading` option.

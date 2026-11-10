@@ -28,8 +28,10 @@ struct LibraryView: View {
                     ScanDetailView(model: ScanDetailModel(environment: environment, scanID: id))
                 }
                 .navigationDestination(for: LibraryDestination.self) { _ in
-                    // photoCapture: wired to the photo capture screen when that build merges.
-                    NewScanView(environment: environment, photoCapture: nil) { id in
+                    NewScanView(
+                        environment: environment,
+                        photoCapture: { AnyView(PhotoCaptureView(environment: environment)) }
+                    ) { id in
                         // Replace New scan with the new scan's detail; Back returns to the list.
                         path = NavigationPath([id])
                     }

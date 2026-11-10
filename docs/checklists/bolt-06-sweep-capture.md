@@ -21,9 +21,9 @@ tape measure, the TV remote on the sofa arm, and Fusion on the PC.
    opens with "Capture method", **Sweep** ("Larger things, 15 cm and up…") and
    **Photos** ("Small parts, finer detail…"), and a **Tip** about matt, light-coloured
    surfaces.
-3. [ ] **Photos** is greyed out and says "Comes in the photo capture build". Tapping it
-   does nothing. *(Once the photo capture build is merged, Photos opens its screen
-   instead; skip this item then.)*
+3. [ ] Build 4 has both capture methods: **Photos** is available, and tapping it opens
+   the photo capture screen full screen (Close returns to New scan). The photo flow
+   itself is in the Bolt 7 checklist.
 4. [ ] Go back. If the library is empty (or later, after deleting every scan), "No
    scans yet" shows its own **New scan** button, which also opens New scan.
 
@@ -110,8 +110,7 @@ tape measure, the TV remote on the sofa arm, and Fusion on the PC.
 
 29. [ ] Turn the phone sideways on New scan, Capture (done in item 8) and Explore with
     Close range on. Nothing is cut off; the close-range controls stay readable.
-30. [ ] With **VoiceOver** on: New scan reads "Sweep… button" and "Photos… dimmed" with
-    its reason; Capture reads "Close", "Sweep capture time", "Captured, 6 areas…",
+30. [ ] With **VoiceOver** on: New scan reads "Sweep… button" and "Photos… button"; Capture reads "Close", "Sweep capture time", "Captured, 6 areas…",
     and "Finish"; Explore reads "Close range" with its hint, "Band width, plus or minus
     5 centimetres", and the hint is announced ("Move closer") when it appears.
 31. [ ] Set the largest text size: New scan, Capture and Explore remain readable. Set it

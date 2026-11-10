@@ -197,6 +197,48 @@ public actor ScanLibrary {
         }
     }
 
+    // MARK: Raw capture (unit U08)
+
+    /// Keeps a photo scan's raw capture with it (FR-6.6): the folder is moved into the
+    /// scan, so Delete frees it and the scan's storage figure includes it, and its size
+    /// is recorded in the manifest. Moving within the phone's storage needs no extra
+    /// space.
+    @discardableResult
+    public func keepRawCapture(_ id: UUID, from folder: URL) throws -> Scan {
+        do {
+            var scan = try readManifest(id)
+            try store.attachRawCapture(from: folder, to: id)
+            let bytes = (try? store.storage(for: id))?.rawCaptureBytes ?? 0
+            scan.rawCaptureBytes = bytes
+            try store.replaceManifest(try ManifestCodec.encode(scan), for: id)
+            log.info("library", "Raw capture kept", ["scan": short(id), "bytes": String(bytes)])
+            return scan
+        } catch {
+            log.error("library", "Raw capture not kept", ["scan": short(id), "reason": reason(error)])
+            throw error
+        }
+    }
+
+    /// Removes a scan's kept raw capture, freeing its storage. A scan without one is
+    /// left as it is.
+    @discardableResult
+    public func discardRawCapture(_ id: UUID) throws -> Scan {
+        do {
+            var scan = try readManifest(id)
+            let freed = (try? store.storage(for: id))?.rawCaptureBytes ?? 0
+            try store.removeRawCapture(for: id)
+            if scan.rawCaptureBytes != nil {
+                scan.rawCaptureBytes = nil
+                try store.replaceManifest(try ManifestCodec.encode(scan), for: id)
+            }
+            log.info("library", "Raw capture discarded", ["scan": short(id), "bytes": String(freed)])
+            return scan
+        } catch {
+            log.error("library", "Raw capture not discarded", ["scan": short(id), "reason": reason(error)])
+            throw error
+        }
+    }
+
     /// Stores an encoded accuracy report with the scan, replacing any earlier one, and
     /// sets `hasAccuracyReport` (unit U10). The report is written before the manifest,
     /// so the flag is never set for a report that is not there.
@@ -216,6 +258,11 @@ public actor ScanLibrary {
             log.error("library", "Accuracy report not saved", ["scan": short(id), "reason": reason(error)])
             throw error
         }
+    }
+
+    /// Where the scan's kept raw capture is, for export (FR-7.5), or `nil` when none.
+    public func rawCaptureFolder(for id: UUID) -> URL? {
+        store.rawCaptureFolder(for: id)
     }
 
     /// The scan's encoded accuracy report, or `nil` when it has none.
