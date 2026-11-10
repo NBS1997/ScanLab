@@ -1,0 +1,31 @@
+{
+  "project": "ScanLab",
+  "platform": "ios",
+  "github": {
+    "owner": "NBS1997",
+    "repo": "ScanLab"
+  },
+  "provider": "github",
+  "codemagic": {},
+  "bitrise": {},
+  "ios": {
+    "path": ".",
+    "scheme": "ScanLab",
+    "bundleId": "com.nbs1997.scanlab",
+    "configuration": "Release"
+  },
+  "flutter": {
+    "watch": {}
+  },
+  "reactNative": {},
+  "kmp": {},
+  "mobai": {},
+  "signing": {
+    "dir": "C:/Users/natys/.scanlab-signing"
+  },
+  "profiles": {
+    "store": {
+      "distribution": "store"
+    }
+  }
+}
