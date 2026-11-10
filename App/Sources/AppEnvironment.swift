@@ -12,9 +12,18 @@ struct AppEnvironment: Sendable {
     let sensorFeed: any LiveCameraFeeding
     /// The saved scans (LibraryService, unit U05): the single owner of scan data.
     let library: ScanLibrary
+    /// The reference object shipped in the app, prepared on first use (unit U10).
+    let reference: BundledReference
+    /// The owner's caliper values for the printed reference object (unit U10).
+    let calipers: CaliperStore
     /// Sweep capture with the depth sensor (U07). Shares the camera with Explore, so
     /// only one of them runs at a time.
     let sweepCapture: any LiveSweepCapturing
+
+    /// Runs accuracy checks (AccuracyService in services.md).
+    var accuracy: AccuracyService {
+        AccuracyService(library: library, reference: reference, calipers: calipers, log: log)
+    }
 
     /// The real app.
     @MainActor
@@ -26,6 +35,8 @@ struct AppEnvironment: Sendable {
             buildInfo: BuildInfo(infoDictionary: Bundle.main.infoDictionary ?? [:]),
             sensorFeed: LiveSensorFeed(log: log),
             library: ScanLibrary(store: store, log: log, availableBytes: { store.availableCapacity() }),
+            reference: BundledReference(log: log),
+            calipers: CaliperStore(url: CaliperStore.standardURL()),
             sweepCapture: ARKitSweepCapture(log: log)
         )
     }
@@ -42,6 +53,8 @@ struct AppEnvironment: Sendable {
             buildInfo: BuildInfo(version: "0.1.0", build: "1", buildDate: Date().addingTimeInterval(-29 * 86_400)),
             sensorFeed: PreviewSensorFeed(),
             library: ScanLibrary(store: MemoryScanStore(), log: log),
+            reference: BundledReference(log: log),
+            calipers: CaliperStore(url: URL.temporaryDirectory.appending(path: "ScanLabPreview-calipers.json")),
             sweepCapture: PreviewSweepCapture()
         )
     }

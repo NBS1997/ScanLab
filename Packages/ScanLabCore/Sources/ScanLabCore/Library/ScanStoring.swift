@@ -96,6 +96,12 @@ public protocol ScanStoring: Sendable {
 
     /// How much storage the scan's folder uses.
     func storage(for id: UUID) throws -> StorageUse
+
+    /// The scan's stored accuracy report (unit U10), or `nil` when it has none.
+    func reportData(for id: UUID) throws -> Data?
+
+    /// Stores the scan's accuracy report in one step, replacing any earlier one.
+    func replaceReport(_ report: Data, for id: UUID) throws
 }
 
 /// A store kept in memory, for tests and screen previews. It can be told to fail, so
@@ -108,6 +114,7 @@ public final class MemoryScanStore: ScanStoring, @unchecked Sendable {
     private var meshes: [UUID: Data] = [:]
     private var thumbnails: [UUID: RGBAImage] = [:]
     private var rawCaptures: [UUID: Int64] = [:]
+    private var reports: [UUID: Data] = [:]
     private var failure: StoreError?
 
     public init() {}
@@ -173,6 +180,7 @@ public final class MemoryScanStore: ScanStoring, @unchecked Sendable {
             meshes[id] = nil
             thumbnails[id] = nil
             rawCaptures[id] = nil
+            reports[id] = nil
         }
     }
 
@@ -181,6 +189,21 @@ public final class MemoryScanStore: ScanStoring, @unchecked Sendable {
             guard let manifest = manifests[id] else { throw StoreError.notFound(id) }
             let model = manifest.count + (meshes[id]?.count ?? 0) + (thumbnails[id]?.bytes.count ?? 0)
             return StorageUse(modelBytes: Int64(model), rawCaptureBytes: rawCaptures[id] ?? 0)
+        }
+    }
+
+    public func reportData(for id: UUID) throws -> Data? {
+        try lock.withLock {
+            guard manifests[id] != nil else { throw StoreError.notFound(id) }
+            return reports[id]
+        }
+    }
+
+    public func replaceReport(_ report: Data, for id: UUID) throws {
+        try lock.withLock {
+            if let failure { throw failure }
+            guard manifests[id] != nil else { throw StoreError.notFound(id) }
+            reports[id] = report
         }
     }
 }

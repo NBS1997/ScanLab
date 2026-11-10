@@ -26,6 +26,13 @@ targets:
     sources:
       - path: App/Sources
       - path: App/Resources
+      # The reference object's true shape and feature table, read by the accuracy
+      # check (unit U10). Bundled straight from the script's output so they can
+      # never drift from what was printed (ADR-010).
+      - path: reference-object/output/reference-object.stl
+        buildPhase: resources
+      - path: reference-object/output/feature-table.json
+        buildPhase: resources
     dependencies:
       - package: ScanLabCore
     info:

@@ -14,6 +14,7 @@ struct ScanDetailView: View {
     @State private var draftName = ""
     @State private var showingDelete = false
     @State private var resetCount = 0
+    @State private var accuracyModel: AccuracyModel?
 
     var body: some View {
         layout
@@ -51,6 +52,11 @@ struct ScanDetailView: View {
             }
             .onChange(of: model.isDeleted) { _, deleted in
                 if deleted { dismiss() }
+            }
+            .navigationDestination(item: $accuracyModel) { accuracy in
+                AccuracyView(model: accuracy)
+                    // Coming back: the scan may now have a report (its tick).
+                    .onDisappear { Task { await model.refreshScan() } }
             }
             .task { await model.load() }
     }
@@ -139,8 +145,15 @@ struct ScanDetailView: View {
                     LabeledContent("On this phone", value: model.storage.map { Units.storage($0.totalBytes) } ?? "—")
                     LabeledContent(
                         "Saved", value: scan.createdAt.formatted(date: .abbreviated, time: .shortened))
+                    LabeledContent("Reference object", value: scan.isReference ? "Yes" : "No")
+                    if scan.hasAccuracyReport {
+                        Label("Has an accuracy report", systemImage: "checkmark.seal.fill")
+                            .foregroundStyle(.green)
+                    }
                 } footer: {
-                    Text("Check accuracy: \(ScanDetailModel.accuracyUnavailableReason.lowercased()).")
+                    if !scan.isReference {
+                        Text("Check accuracy: \(ScanDetailModel.accuracyUnavailableReason.lowercased()).")
+                    }
                 }
             }
         }
@@ -153,6 +166,15 @@ struct ScanDetailView: View {
                 draftName = model.scan?.name ?? ""
                 showingRename = true
             }
+            if model.scan?.isReference == true {
+                Button("Unmark as reference object", systemImage: "scope") {
+                    Task { await model.setReference(false) }
+                }
+            } else {
+                Button("Mark as reference object", systemImage: "scope") {
+                    Task { await model.setReference(true) }
+                }
+            }
             Button("Delete", systemImage: "trash", role: .destructive) {
                 showingDelete = true
             }
@@ -164,11 +186,20 @@ struct ScanDetailView: View {
         .accessibilityHint("Rename or delete this scan")
     }
 
+    private var accuracyHint: String {
+        if model.canCheckAccuracy {
+            return "Compares this scan with the reference object's true shape"
+        }
+        return ScanDetailModel.accuracyUnavailableReason
+    }
+
     @ViewBuilder
     private var bottomBar: some View {
-        Button("Check accuracy", systemImage: "ruler") {}
-            .disabled(!model.canCheckAccuracy)
-            .accessibilityHint(ScanDetailModel.accuracyUnavailableReason)
+        Button("Check accuracy", systemImage: "ruler") {
+            accuracyModel = model.makeAccuracyModel()
+        }
+        .disabled(!model.canCheckAccuracy)
+        .accessibilityHint(accuracyHint)
         Spacer()
         Button("Export", systemImage: "square.and.arrow.up") {
             exportSheet = model.makeExportModel().map(ExportSheet.init)

@@ -13,8 +13,8 @@ final class ScanDetailModel {
         case failed(String)
     }
 
-    /// Why Check accuracy cannot be used yet (unit U10 brings the accuracy report).
-    static let accuracyUnavailableReason = "Comes with the accuracy report"
+    /// Why Check accuracy cannot be used on this scan (FR-9.1, rule AC-1).
+    static let accuracyUnavailableReason = "Mark this scan as the reference object first, in the ••• menu"
     static let edgesUnavailableReason = "Coming in a later build"
 
     let scanID: UUID
@@ -41,9 +41,9 @@ final class ScanDetailModel {
 
     var canExport: Bool { mesh != nil }
 
-    /// Check accuracy stays off in this build. Later it needs a reference scan
-    /// (business rule SL-11).
-    var canCheckAccuracy: Bool { false }
+    /// Check accuracy works only on a scan marked as the reference object (FR-9.1),
+    /// once its model has opened.
+    var canCheckAccuracy: Bool { scan?.isReference == true && mesh != nil }
 
     /// Runs once when the screen opens: reads the details, then the model, then turns
     /// the model into the 3D view's buffers away from the main thread.
@@ -94,6 +94,32 @@ final class ScanDetailModel {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    /// Marks or unmarks the scan as being of the printed reference object (FR-9.1).
+    func setReference(_ isReference: Bool) async {
+        errorMessage = nil
+        do {
+            scan = try await library.setReference(scanID, isReference)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Re-reads the scan's details, for example after an accuracy report was saved.
+    func refreshScan() async {
+        do {
+            scan = try await library.scan(scanID)
+        } catch {
+            // The details already shown stay; the next visit reads them again.
+            environment.log.warning("ui", "Scan details not refreshed", ["reason": error.localizedDescription])
+        }
+    }
+
+    /// The Accuracy screen for this scan.
+    func makeAccuracyModel() -> AccuracyModel? {
+        guard let scan, canCheckAccuracy else { return nil }
+        return AccuracyModel(environment: environment, scan: scan)
     }
 
     /// The Export sheet for this scan's model (the same sheet as the sample's).

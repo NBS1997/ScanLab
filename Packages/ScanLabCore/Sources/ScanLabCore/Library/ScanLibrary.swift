@@ -197,6 +197,37 @@ public actor ScanLibrary {
         }
     }
 
+    /// Stores an encoded accuracy report with the scan, replacing any earlier one, and
+    /// sets `hasAccuracyReport` (unit U10). The report is written before the manifest,
+    /// so the flag is never set for a report that is not there.
+    @discardableResult
+    public func attachReport(_ report: Data, to id: UUID) throws -> Scan {
+        do {
+            var scan = try readManifest(id)
+            try checkSpace(for: Int64(report.count))
+            try store.replaceReport(report, for: id)
+            if !scan.hasAccuracyReport {
+                scan.hasAccuracyReport = true
+                try store.replaceManifest(try ManifestCodec.encode(scan), for: id)
+            }
+            log.info("library", "Accuracy report saved", ["scan": short(id), "bytes": String(report.count)])
+            return scan
+        } catch {
+            log.error("library", "Accuracy report not saved", ["scan": short(id), "reason": reason(error)])
+            throw error
+        }
+    }
+
+    /// The scan's encoded accuracy report, or `nil` when it has none.
+    public func reportData(for id: UUID) throws -> Data? {
+        do {
+            return try store.reportData(for: id)
+        } catch {
+            log.error("library", "Accuracy report not read", ["scan": short(id), "reason": reason(error)])
+            throw error
+        }
+    }
+
     private func readManifest(_ id: UUID) throws -> Scan {
         let scan = try ManifestCodec.decode(try store.manifestData(for: id))
         // A manifest copied into the wrong folder would otherwise make two scans

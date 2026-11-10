@@ -13,6 +13,7 @@ import UniformTypeIdentifiers
 ///         manifest.json     name, method, date, sizes and flags
 ///         mesh.slmesh       the model (Core's MeshBinary layout)
 ///         thumbnail.png     the 160 × 160 list picture
+///         accuracy-report.json   the latest accuracy report, when checked (unit U10)
 ///         RawCapture/       photographs and camera positions, when kept (unit U08)
 ///     .incoming-…/          a scan being written; never listed
 /// ```
@@ -28,6 +29,7 @@ struct FileScanStore: ScanStoring {
     static let meshName = "mesh.slmesh"
     static let thumbnailName = "thumbnail.png"
     static let rawCaptureName = "RawCapture"
+    static let reportName = "accuracy-report.json"
     private static let incomingPrefix = ".incoming-"
 
     /// The `Scans` folder.
@@ -137,6 +139,26 @@ struct FileScanStore: ScanStoring {
         let total = Self.bytes(in: url)
         let rawBytes = Self.bytes(in: raw)
         return StorageUse(modelBytes: max(total - rawBytes, 0), rawCaptureBytes: rawBytes)
+    }
+
+    func reportData(for id: UUID) throws -> Data? {
+        let url = try existingFolder(id).appending(path: Self.reportName)
+        guard FileManager.default.fileExists(atPath: url.path()) else { return nil }
+        do {
+            return try Data(contentsOf: url)
+        } catch {
+            throw StoreError.readFailed(error.localizedDescription)
+        }
+    }
+
+    func replaceReport(_ report: Data, for id: UUID) throws {
+        let url = try existingFolder(id).appending(path: Self.reportName)
+        do {
+            // `.atomic` writes a temporary file beside it and swaps it in.
+            try report.write(to: url, options: .atomic)
+        } catch {
+            throw Self.classify(error)
+        }
     }
 
     // MARK: - Helpers
