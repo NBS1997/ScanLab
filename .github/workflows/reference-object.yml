@@ -1,0 +1,53 @@
+# Generates and checks the reference object (Unit U03, ADR-010). CadQuery is not
+# installed on the owner's Windows PC, so the script runs here. The generated files are
+# uploaded as an artifact; they are downloaded and committed by hand so the owner never
+# has to run the script.
+name: Reference object
+
+on:
+  push:
+    paths:
+      - "reference-object/**"
+      - ".github/workflows/reference-object.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reference-object-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: System libraries CadQuery's OpenCascade build needs
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1 libglu1-mesa
+
+      - name: Install CadQuery and pytest (version-pinned)
+        run: |
+          python -m pip install --upgrade pip
+          pip install "cadquery==2.5.2" "pytest==8.3.4"
+          python -c "import cadquery; print('CadQuery', cadquery.__version__)"
+
+      - name: Generate STL, STEP, feature table and measurement sheet
+        run: python reference-object/reference_object.py
+
+      - name: Check the object
+        run: python -m pytest reference-object/test_reference_object.py -v
+
+      - name: Upload generated files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reference-object-output
+          path: reference-object/output/
+          if-no-files-found: error

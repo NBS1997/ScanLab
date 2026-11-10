@@ -1,0 +1,632 @@
+{
+  "version": 1,
+  "units": {
+    "length": "mm",
+    "angle": "deg"
+  },
+  "coordinateFrame": "Object coordinates in millimetres. X along the long straight front edge (left to right), Y from the front edge towards the back, Z up from the underside (the print-bed face, Z = 0).",
+  "angleConvention": "Angles are the acute angle (0 to 90 degrees) between the planes of the two named faces.",
+  "sizeClasses": {
+    "small": 5.0,
+    "medium": 30.0,
+    "large": null
+  },
+  "overall": {
+    "min": [
+      0.724,
+      0.0,
+      0.0
+    ],
+    "max": [
+      160.0,
+      105.0,
+      108.0
+    ],
+    "size": [
+      159.276,
+      105.0,
+      108.0
+    ]
+  },
+  "volumeMm3": 215107.7,
+  "features": [
+    {
+      "id": "L1",
+      "kind": "length",
+      "description": "Thickness of the thin upright rib near the right edge",
+      "designValue": 1.6,
+      "unit": "mm",
+      "sizeMm": 1.6,
+      "sizeClass": "small",
+      "measure": "Close the outside jaws gently on the thin rib near the right-hand edge, across its thickness (left to right).",
+      "region": {
+        "min": [
+          152.75,
+          44.75,
+          7.75
+        ],
+        "max": [
+          154.85,
+          75.25,
+          18.25
+        ]
+      },
+      "primitive": "plane-pair"
+    },
+    {
+      "id": "L2",
+      "kind": "length",
+      "description": "Width of the through slot behind the dome",
+      "designValue": 6.0,
+      "unit": "mm",
+      "sizeMm": 6.0,
+      "sizeClass": "medium",
+      "measure": "Put the small inside jaws into the long narrow slot and open them across its width (left to right).",
+      "region": {
+        "min": [
+          69.75,
+          77.75,
+          0.0
+        ],
+        "max": [
+          76.25,
+          98.25,
+          8.25
+        ]
+      },
+      "primitive": "plane-pair"
+    },
+    {
+      "id": "L3",
+      "kind": "length",
+      "description": "Width of the tall tower, left face to right face",
+      "designValue": 22.0,
+      "unit": "mm",
+      "sizeMm": 22.0,
+      "sizeClass": "medium",
+      "measure": "Close the outside jaws on the tall tower from left to right, about halfway up, away from the rounded corner.",
+      "region": {
+        "min": [
+          11.75,
+          69.75,
+          7.75
+        ],
+        "max": [
+          34.25,
+          96.25,
+          108.0
+        ]
+      },
+      "primitive": "plane-pair"
+    },
+    {
+      "id": "L4",
+      "kind": "length",
+      "description": "Depth of the tall tower, front face to back face",
+      "designValue": 26.0,
+      "unit": "mm",
+      "sizeMm": 26.0,
+      "sizeClass": "medium",
+      "measure": "Close the outside jaws on the tall tower from front to back, about halfway up.",
+      "region": {
+        "min": [
+          11.75,
+          69.75,
+          7.75
+        ],
+        "max": [
+          34.25,
+          96.25,
+          108.0
+        ]
+      },
+      "primitive": "plane-pair"
+    },
+    {
+      "id": "L5",
+      "kind": "length",
+      "description": "Front-to-back depth of the plate at the left, front edge to the short straight back edge",
+      "designValue": 105.0,
+      "unit": "mm",
+      "sizeMm": 105.0,
+      "sizeClass": "large",
+      "measure": "Close the outside jaws on the plate edges from front to back, between the large hole and the curved left side, where the back edge is straight and parallel to the front edge (about 4 cm in from the corner cut).",
+      "region": {
+        "min": [
+          29.75,
+          0.0,
+          0.0
+        ],
+        "max": [
+          60.25,
+          105.0,
+          8.25
+        ]
+      },
+      "primitive": "plane-pair"
+    },
+    {
+      "id": "L6",
+      "kind": "length",
+      "description": "Overall height, underside to the top of the tall tower",
+      "designValue": 108.0,
+      "unit": "mm",
+      "sizeMm": 108.0,
+      "sizeClass": "large",
+      "measure": "Close the outside jaws from the underside of the plate to the top of the tall tower, reaching in from the curved left side.",
+      "region": {
+        "min": [
+          11.75,
+          69.75,
+          0.0
+        ],
+        "max": [
+          34.25,
+          96.25,
+          108.0
+        ]
+      },
+      "primitive": "plane-pair"
+    },
+    {
+      "id": "S1",
+      "kind": "step",
+      "description": "Height of the low square pad above the plate",
+      "designValue": 1.5,
+      "unit": "mm",
+      "sizeMm": 1.5,
+      "sizeClass": "small",
+      "measure": "Stand the end of the calipers on the low square pad and slide the depth rod down until it touches the plate beside the pad.",
+      "region": {
+        "min": [
+          61.75,
+          27.75,
+          7.75
+        ],
+        "max": [
+          86.25,
+          44.25,
+          9.75
+        ]
+      },
+      "primitive": "plane-pair"
+    },
+    {
+      "id": "S2",
+      "kind": "step",
+      "description": "Plate thickness, underside to plate top",
+      "designValue": 8.0,
+      "unit": "mm",
+      "sizeMm": 8.0,
+      "sizeClass": "medium",
+      "measure": "Close the outside jaws on the plate at the front edge, underside to top, clear of the ramp and stairs.",
+      "region": {
+        "min": [
+          39.75,
+          0.0,
+          0.0
+        ],
+        "max": [
+          65.25,
+          6.25,
+          8.25
+        ]
+      },
+      "primitive": "plane-pair"
+    },
+    {
+      "id": "S3",
+      "kind": "step",
+      "description": "Height of the lower stair tread above the plate",
+      "designValue": 10.0,
+      "unit": "mm",
+      "sizeMm": 10.0,
+      "sizeClass": "medium",
+      "measure": "Stand the end of the calipers on the lower stair tread and slide the depth rod down to the plate on its left.",
+      "region": {
+        "min": [
+          104.75,
+          3.75,
+          7.75
+        ],
+        "max": [
+          128.25,
+          40.25,
+          18.25
+        ]
+      },
+      "primitive": "plane-pair"
+    },
+    {
+      "id": "S4",
+      "kind": "step",
+      "description": "Rise from the lower stair tread to the upper stair tread",
+      "designValue": 15.0,
+      "unit": "mm",
+      "sizeMm": 15.0,
+      "sizeClass": "medium",
+      "measure": "Stand the end of the calipers on the upper stair tread and slide the depth rod down to the lower tread.",
+      "region": {
+        "min": [
+          107.75,
+          7.75,
+          17.75
+        ],
+        "max": [
+          152.25,
+          36.25,
+          33.25
+        ]
+      },
+      "primitive": "plane-pair"
+    },
+    {
+      "id": "S5",
+      "kind": "step",
+      "description": "Height of the tall tower above the plate",
+      "designValue": 100.0,
+      "unit": "mm",
+      "sizeMm": 100.0,
+      "sizeClass": "large",
+      "measure": "Hard to reach directly: measure L6 (overall height) and S2 (plate thickness) and write L6 minus S2 here. If your depth rod is long enough, you can instead stand the calipers on the tower top and drop the rod to the plate.",
+      "region": {
+        "min": [
+          7.75,
+          65.75,
+          7.75
+        ],
+        "max": [
+          38.25,
+          100.25,
+          108.0
+        ]
+      },
+      "primitive": "plane-pair"
+    },
+    {
+      "id": "H1",
+      "kind": "hole",
+      "description": "Diameter of the 2 mm round through hole",
+      "designValue": 2.0,
+      "unit": "mm",
+      "sizeMm": 2.0,
+      "sizeClass": "small",
+      "measure": "Put the small inside jaws into the round hole and open them until they touch both sides; rock them slightly and keep the largest reading. The jaw tips may be too thick for a hole this small; if so, find the largest drill bit that slides in and measure the drill bit instead.",
+      "region": {
+        "min": [
+          18.75,
+          58.75,
+          0.0
+        ],
+        "max": [
+          21.25,
+          61.25,
+          8.25
+        ]
+      },
+      "primitive": "cylinder"
+    },
+    {
+      "id": "H2",
+      "kind": "hole",
+      "description": "Diameter of the 5 mm round through hole",
+      "designValue": 5.0,
+      "unit": "mm",
+      "sizeMm": 5.0,
+      "sizeClass": "small",
+      "measure": "Put the small inside jaws into the round hole and open them until they touch both sides; rock them slightly and keep the largest reading.",
+      "region": {
+        "min": [
+          99.25,
+          37.25,
+          0.0
+        ],
+        "max": [
+          104.75,
+          42.75,
+          8.25
+        ]
+      },
+      "primitive": "cylinder"
+    },
+    {
+      "id": "H3",
+      "kind": "hole",
+      "description": "Diameter of the 12 mm round through hole",
+      "designValue": 12.0,
+      "unit": "mm",
+      "sizeMm": 12.0,
+      "sizeClass": "medium",
+      "measure": "Put the small inside jaws into the round hole and open them until they touch both sides; rock them slightly and keep the largest reading.",
+      "region": {
+        "min": [
+          55.75,
+          13.75,
+          0.0
+        ],
+        "max": [
+          68.25,
+          26.25,
+          8.25
+        ]
+      },
+      "primitive": "cylinder"
+    },
+    {
+      "id": "H4",
+      "kind": "hole",
+      "description": "Diameter of the 30 mm round through hole",
+      "designValue": 30.0,
+      "unit": "mm",
+      "sizeMm": 30.0,
+      "sizeClass": "medium",
+      "measure": "Put the small inside jaws into the round hole and open them until they touch both sides; rock them slightly and keep the largest reading.",
+      "region": {
+        "min": [
+          24.75,
+          22.75,
+          0.0
+        ],
+        "max": [
+          55.25,
+          53.25,
+          8.25
+        ]
+      },
+      "primitive": "cylinder"
+    },
+    {
+      "id": "B1",
+      "kind": "boss",
+      "description": "Diameter of the 2 mm round post (4 mm tall)",
+      "designValue": 2.0,
+      "unit": "mm",
+      "sizeMm": 2.0,
+      "sizeClass": "small",
+      "measure": "Close the outside jaws across the round post, near its top, and keep the smallest steady reading.",
+      "region": {
+        "min": [
+          58.75,
+          60.75,
+          7.75
+        ],
+        "max": [
+          61.25,
+          63.25,
+          12.25
+        ]
+      },
+      "primitive": "cylinder"
+    },
+    {
+      "id": "B2",
+      "kind": "boss",
+      "description": "Diameter of the 8 mm round post (6 mm tall)",
+      "designValue": 8.0,
+      "unit": "mm",
+      "sizeMm": 8.0,
+      "sizeClass": "medium",
+      "measure": "Close the outside jaws across the round post, near its top, and keep the smallest steady reading.",
+      "region": {
+        "min": [
+          90.75,
+          83.75,
+          7.75
+        ],
+        "max": [
+          99.25,
+          92.25,
+          14.25
+        ]
+      },
+      "primitive": "cylinder"
+    },
+    {
+      "id": "B3",
+      "kind": "boss",
+      "description": "Diameter of the 20 mm round post (12 mm tall)",
+      "designValue": 20.0,
+      "unit": "mm",
+      "sizeMm": 20.0,
+      "sizeClass": "medium",
+      "measure": "Close the outside jaws across the round post, near its top, and keep the smallest steady reading.",
+      "region": {
+        "min": [
+          41.75,
+          74.75,
+          7.75
+        ],
+        "max": [
+          62.25,
+          95.25,
+          20.25
+        ]
+      },
+      "primitive": "cylinder"
+    },
+    {
+      "id": "B4",
+      "kind": "boss",
+      "description": "Diameter of the 40 mm round post (4 mm tall)",
+      "designValue": 40.0,
+      "unit": "mm",
+      "sizeMm": 40.0,
+      "sizeClass": "large",
+      "measure": "Close the outside jaws across the round post, near its top, and keep the smallest steady reading.",
+      "region": {
+        "min": [
+          105.75,
+          43.75,
+          7.75
+        ],
+        "max": [
+          146.25,
+          84.25,
+          12.25
+        ]
+      },
+      "primitive": "cylinder"
+    },
+    {
+      "id": "A1",
+      "kind": "angle",
+      "description": "Small chamfer on the front top edge of the upper stair, against the stair top",
+      "designValue": 45.0,
+      "unit": "deg",
+      "sizeMm": 1.697,
+      "sizeClass": "small",
+      "measure": "Too small for a protractor. With the depth rod, measure how far the chamfer runs down the front face (design 1.2 mm), and with the jaws how far it runs back across the top (design 1.2 mm). Angle = arctan(down / back). Leave blank if you cannot measure it.",
+      "region": {
+        "min": [
+          127.75,
+          7.75,
+          30.35
+        ],
+        "max": [
+          152.25,
+          11.85,
+          33.25
+        ]
+      },
+      "primitive": "plane-angle"
+    },
+    {
+      "id": "A2",
+      "kind": "angle",
+      "description": "Corner cut at the front left, against the front face",
+      "designValue": 30.0,
+      "unit": "deg",
+      "sizeMm": 25.403,
+      "sizeClass": "medium",
+      "measure": "Hold a protractor against the long straight front face with its arm along the cut-off front-left corner. If your protractor reads more than 90 degrees, write 180 minus the reading.",
+      "region": {
+        "min": [
+          7.75,
+          0.0,
+          0.0
+        ],
+        "max": [
+          40.25,
+          12.952,
+          8.25
+        ]
+      },
+      "primitive": "plane-angle"
+    },
+    {
+      "id": "A3",
+      "kind": "angle",
+      "description": "Sloping top of the ramp, against the plate top",
+      "designValue": 25.0,
+      "unit": "deg",
+      "sizeMm": 33.101,
+      "sizeClass": "large",
+      "measure": "Stand a protractor on the plate beside the ramp with its arm along the slope. No protractor? Measure the ramp's tall end with the depth rod (design 13.99 mm) and its length along the plate with the jaws (design 30 mm); angle = arctan(height / length).",
+      "region": {
+        "min": [
+          68.25,
+          2.75,
+          7.75
+        ],
+        "max": [
+          100.25,
+          23.25,
+          22.239
+        ]
+      },
+      "primitive": "plane-angle"
+    },
+    {
+      "id": "A4",
+      "kind": "angle",
+      "description": "Long slanted back edge, against the right-hand face at the back right corner",
+      "designValue": 80.0,
+      "unit": "deg",
+      "sizeMm": 101.543,
+      "sizeClass": "large",
+      "measure": "Hold a protractor at the back right corner, one arm along the right-hand face and the other along the long slanted back face. If your protractor reads more than 90 degrees, write 180 minus the reading.",
+      "region": {
+        "min": [
+          129.75,
+          71.75,
+          0.0
+        ],
+        "max": [
+          160.0,
+          92.907,
+          8.25
+        ]
+      },
+      "primitive": "plane-angle"
+    },
+    {
+      "id": "C1",
+      "kind": "curve",
+      "description": "Radius of the rounded front-right vertical edge of the tall tower",
+      "designValue": 1.5,
+      "unit": "mm",
+      "sizeMm": 1.5,
+      "sizeClass": "small",
+      "measure": "Calipers cannot measure this directly. Use a radius gauge if you have one; otherwise leave blank.",
+      "region": {
+        "min": [
+          32.25,
+          69.75,
+          7.75
+        ],
+        "max": [
+          34.25,
+          71.75,
+          108.0
+        ]
+      },
+      "primitive": "cylinder"
+    },
+    {
+      "id": "C2",
+      "kind": "curve",
+      "description": "Radius of the half-ball dome",
+      "designValue": 15.0,
+      "unit": "mm",
+      "sizeMm": 15.0,
+      "sizeClass": "medium",
+      "measure": "Stand the end of the calipers on the top of the dome and slide the depth rod down to the plate; for a half ball the height equals the radius. (Check: the dome's width across its base should be twice this.)",
+      "region": {
+        "min": [
+          69.75,
+          44.75,
+          7.75
+        ],
+        "max": [
+          100.25,
+          75.25,
+          23.25
+        ]
+      },
+      "primitive": "sphere"
+    },
+    {
+      "id": "C3",
+      "kind": "curve",
+      "description": "Radius of the gently curved left side",
+      "designValue": 150.0,
+      "unit": "mm",
+      "sizeMm": 150.0,
+      "sizeClass": "large",
+      "measure": "Lay a steel rule on edge against the two ends of the curved left side (design gap 92.30 mm between the ends). With the depth rod, measure the gap between the rule and the middle of the curve (design 7.28 mm). Radius = (ends gap x ends gap) / (8 x middle gap) + middle gap / 2.",
+      "region": {
+        "min": [
+          0.724,
+          12.452,
+          0.0
+        ],
+        "max": [
+          8.25,
+          105.0,
+          8.25
+        ]
+      },
+      "primitive": "cylinder"
+    }
+  ]
+}

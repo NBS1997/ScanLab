@@ -8,7 +8,7 @@
 - **State Version**: 7
 - **Active Agent**: aidlc-architect-agent
 - **Worktree Path**:
-- **Bolt Refs**: [empty list]
+- **Bolt Refs**: [geometry-export, live-sensor-view]
 - **Practices Affirmed Timestamp**: 2026-11-10T10:17:45Z
 
 ## Scope Configuration
@@ -92,6 +92,7 @@ Per unit: [TBD]
 - **Current Stage**: functional-design
 - **Next Stage**: nfr-requirements
 - **Status**: Running
+- **Construction Autonomy Mode**: autonomous
 - **Last Updated**: 2026-11-10T10:57:20Z
 
 ## Session Resume Point
