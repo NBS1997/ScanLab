@@ -1,0 +1,11 @@
+# ---- AI-DLC runtime state (may contain sensitive data, or is machine-local) ----
+aidlc-docs/audit.md
+aidlc-docs/.aidlc-recovery.md
+aidlc-docs/.aidlc-hooks-health/
+aidlc-docs/runtime-graph.json
+aidlc-docs/.aidlc-sensors/
+
+# ---- Claude Code personal overrides ----
+.claude/settings.local.json
+.claude/worktrees/
+.claude/scheduled_tasks.lock
