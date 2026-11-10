@@ -61,6 +61,15 @@ final class DiagnosticsModel {
         }
     }
 
+    /// The Export screen for the built-in sample model, so export can be tried before
+    /// scanning exists (unit U04). The model is built when the screen opens, off the
+    /// main thread.
+    func makeSampleExportModel() -> ExportModel {
+        ExportModel(
+            name: SampleMeshes.stepBlockName, service: ExportService(log: environment.log),
+            loadMesh: { SampleMeshes.stepBlock() })
+    }
+
     /// Called when the owner taps Export log.
     func recordExportTapped() {
         environment.log.info("log", "Log export opened", ["events": String(totalEvents)])

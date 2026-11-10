@@ -4,6 +4,7 @@ import SwiftUI
 /// Mockups screen 9: which build this is, when it expires, and what the app has done.
 struct DiagnosticsView: View {
     @State var model: DiagnosticsModel
+    @State private var showingSampleExport = false
 
     var body: some View {
         List {
@@ -11,6 +12,17 @@ struct DiagnosticsView: View {
                 LabeledContent("Version", value: model.buildInfo.versionDescription)
                 LabeledContent("Built", value: model.buildDateText())
                 LabeledContent("Build expires", value: model.expiryText())
+            }
+
+            Section {
+                Button("Export sample model…", systemImage: "cube") {
+                    showingSampleExport = true
+                }
+            } header: {
+                Text("Sample model")
+            } footer: {
+                let size = Units.formatDimensions(SampleMeshes.stepBlockSize)
+                Text("A built-in \(size) stepped block, for trying export before scanning arrives.")
             }
 
             Section {
@@ -44,6 +56,9 @@ struct DiagnosticsView: View {
             ToolbarItem(placement: .bottomBar) {
                 exportButton
             }
+        }
+        .sheet(isPresented: $showingSampleExport) {
+            ExportView(model: model.makeSampleExportModel())
         }
         .refreshable { await model.reload() }
         .task {
