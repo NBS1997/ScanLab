@@ -3,9 +3,10 @@ import SwiftUI
 
 @main
 struct ScanLabApp: App {
-    private let environment = AppEnvironment.live()
+    private let environment: AppEnvironment
 
     init() {
+        environment = AppEnvironment.live()
         // Business rule BR-7: every launch is recorded with the version and build, so
         // an exported log always says which build produced it.
         environment.log.info(

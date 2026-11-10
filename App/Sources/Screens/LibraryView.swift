@@ -11,7 +11,9 @@ struct LibraryView: View {
             ContentUnavailableView {
                 Label("No scans yet", systemImage: "cube.transparent")
             } description: {
-                Text("Scanning arrives in a later build. Diagnostics shows what this build has done.")
+                Text(
+                    "Scanning arrives in a later build. Explore shows the live depth sensor; "
+                        + "Diagnostics shows what this build has done.")
             }
             .navigationTitle("Scans")
             .toolbar {
@@ -19,6 +21,15 @@ struct LibraryView: View {
                     NavigationLink("Diagnostics") {
                         DiagnosticsView(model: DiagnosticsModel(environment: environment))
                     }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        ExploreView(model: ExploreModel(environment: environment))
+                    } label: {
+                        Label("Explore", systemImage: "camera.viewfinder")
+                            .labelStyle(.titleAndIcon)
+                    }
+                    .accessibilityHint("Shows the live camera and depth sensor")
                 }
             }
         }

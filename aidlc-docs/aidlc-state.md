@@ -8,7 +8,7 @@
 - **State Version**: 7
 - **Active Agent**: aidlc-architect-agent
 - **Worktree Path**:
-- **Bolt Refs**: [geometry-export, live-sensor-view]
+- **Bolt Refs**: [geometry-export]
 - **Practices Affirmed Timestamp**: 2026-11-10T10:17:45Z
 
 ## Scope Configuration
