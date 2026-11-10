@@ -105,6 +105,10 @@ Every Bolt's position respects the DAG: each Unit's prerequisites are in an earl
   Bolts 3–5 this completes the **thin first version** the owner asked for (one live view,
   one scan-to-file path).
 - **Stories:** US-06.
+- **Added 2026-11-11 (owner feedback after testing build 3):** Explore gains a
+  close-range colour mode (colours spread over a narrow band around the centre distance,
+  so a 2 cm step stands out) and a depth-only poor-depth hint ("Move closer" / "Move
+  back") when the centre has missing or low-confidence depth.
 
 ### Bolt 7 — Photo capture (U08) · `photo-capture`
 - **Bolt DoD:** a photo capture of an object under 150 mm builds a model offline with
@@ -149,12 +153,20 @@ Q2-B): it follows the gate mode chosen after the walking skeleton.
   without watching the screen."
 - **Expected demo:** cover the camera mid-capture; take a phone call mid-capture.
 - **Stories:** US-08, US-09.
+- **Added 2026-11-11 (owner feedback after testing build 3):** small, low or dark objects
+  (a remote control on a sofa arm) were hard to pick out in Explore. When the camera
+  picture shows an object's edges but the depth there is missing, low-confidence or
+  barely different from its surroundings, guidance tells the owner to **move closer** or
+  **move back**. Bolt 6 adds a first, depth-only version of this hint to Explore; this
+  Bolt brings it into capture guidance, and Bolt 11 adds the camera-edges half.
 
 ### Bolt 11 — Edge detection (U12) · `edge-detection`
 - **Bolt DoD:** edges layer live in Explore and over a scan's source picture; a finding
   recorded on whether a sharp step is picked out.
 - **Confidence hypothesis:** "Camera edges reveal detail the depth sensor misses."
 - **Stories:** US-05.
+- **Added 2026-11-11:** feed edges into the poor-depth hint (see Bolt 10): edges in the
+  picture with poor depth behind them trigger "move closer" or "move back".
 
 ### Bolt 12 — Hardware details and findings (U13) · `hardware-details`
 - **Bolt DoD:** every listed value read from the phone at runtime; findings persist and

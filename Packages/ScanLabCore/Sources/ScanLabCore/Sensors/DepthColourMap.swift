@@ -56,6 +56,22 @@ public struct DepthColourMap: Equatable, Sendable {
         return min(max(fraction, 0), 1)
     }
 
+    /// A narrow map centred on one distance, for the Explore close-range mode (owner
+    /// feedback 2026-11-11). The whole colour ramp is spread over `centre ± halfWidth`,
+    /// so a step of a couple of centimetres shows as a clear change of colour instead
+    /// of two nearly identical shades. Anything nearer or farther takes the end colour.
+    ///
+    /// Nil when the centre is not a usable reading or the half-width is not a positive
+    /// number. The near end never goes below zero.
+    public static func closeRange(centredOn centre: Float, halfWidth: Float) -> DepthColourMap? {
+        guard DepthFrame.isValid(centre), halfWidth.isFinite, halfWidth > 0 else { return nil }
+        return DepthColourMap(nearMetres: max(centre - halfWidth, 0), farMetres: centre + halfWidth)
+    }
+
+    /// True for a map no more than half a metre deep, whose legend reads better in
+    /// millimetres than in metres.
+    public var isNarrow: Bool { farMetres - nearMetres <= 0.5 }
+
     public func colour(forMetres metres: Float) -> RGBAColour {
         guard let fraction = position(forMetres: metres) else { return Self.invalidColour }
         return Self.colour(atPosition: fraction)

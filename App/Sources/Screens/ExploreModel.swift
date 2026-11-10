@@ -24,13 +24,22 @@ final class ExploreModel {
     /// Edge detection arrives with Bolt 11 (U12).
     static let edgesUnavailableReason = "Coming in a later build"
 
+    /// How long a new depth hint must hold before it is shown, so it does not flicker
+    /// as the hand wobbles (and the log records only real changes).
+    static let hintHoldSeconds: TimeInterval = 0.75
+
     let feed: any LiveCameraFeeding
-    let depthColours = DepthColourMap.standard
     let confidenceColours = ConfidenceColourMap.standard
 
     var showCamera = true
     var showDepth = false
     var showConfidence = false
+    /// Close-range colour mode (owner feedback 2026-11-11): the depth colours spread
+    /// over a narrow band around the centre distance, so a 2 cm step stands out.
+    var closeRange = false
+    private(set) var band = CloseRangeBand()
+    /// "Move closer", "Move back", or nil when the depth at the centre looks fine.
+    private(set) var depthHint: String?
 
     private(set) var status: SensorStatus = .starting
     private(set) var depthImage: CGImage?
@@ -43,6 +52,9 @@ final class ExploreModel {
     @ObservationIgnored private var meter = FrameRateMeter()
     @ObservationIgnored private var lastTextRefresh = -TimeInterval.infinity
     @ObservationIgnored private var tasks: [Task<Void, Never>] = []
+    @ObservationIgnored private var advice = SteadyValue(DepthAdvice.good, holdSeconds: ExploreModel.hintHoldSeconds)
+    /// The last good centre distance, which helps the hint when the centre goes blank.
+    @ObservationIgnored private var recentDistance: Float?
 
     init(environment: AppEnvironment) {
         feed = environment.sensorFeed
@@ -54,6 +66,16 @@ final class ExploreModel {
     var frameRateText: String { ReadoutText.frameRate(framesPerSecond) }
     var frameRateSpoken: String { ReadoutText.spokenFrameRate(framesPerSecond) }
 
+    /// The colours in use: the close-range band when that mode is on and a reading has
+    /// arrived, otherwise the standard 0.2–5 m map.
+    var depthColours: DepthColourMap {
+        guard closeRange, let map = band.colourMap else { return .standard }
+        return map
+    }
+
+    /// True while close-range mode is on but no centre reading has arrived yet.
+    var isWaitingForBand: Bool { closeRange && band.colourMap == nil }
+
     // MARK: - Sensor lifetime
 
     func start() {
@@ -61,6 +83,8 @@ final class ExploreModel {
         status = .starting
         meter.reset()
         lastTextRefresh = -.infinity
+        advice = SteadyValue(DepthAdvice.good, holdSeconds: Self.hintHoldSeconds)
+        depthHint = nil
         log.info("ui", "Explore shown", ["layers": layerSummary])
         let streams = feed.start()
         // Two loops, one per stream. Both run on the main actor, as this model does,
@@ -88,6 +112,31 @@ final class ExploreModel {
         depthImage = nil
         confidenceImage = nil
         log.info("ui", "Explore left")
+    }
+
+    // MARK: - Close-range mode
+
+    /// Turning close range on also turns the depth layer on, since the mode only
+    /// changes the depth colours.
+    func closeRangeChanged(isOn: Bool) {
+        if isOn {
+            band = CloseRangeBand(halfWidth: band.halfWidth)
+            band.follow(centreMetres)
+            showDepth = true
+        }
+        log.info(
+            "ui", "Explore colour mode changed",
+            [
+                "mode": isOn ? "close range" : "standard",
+                "band": CloseRangeBand.label(halfWidth: band.halfWidth),
+                "centre": ReadoutText.distance(metres: band.centre),
+            ])
+    }
+
+    func setBandHalfWidth(_ halfWidth: Float) {
+        guard halfWidth != band.halfWidth else { return }
+        band.setHalfWidth(halfWidth)
+        log.info("ui", "Explore close-range band changed", ["band": CloseRangeBand.label(halfWidth: band.halfWidth)])
     }
 
     // MARK: - Layers
@@ -148,6 +197,30 @@ final class ExploreModel {
         lastTextRefresh = frame.timestamp
         framesPerSecond = meter.framesPerSecond
         centreMetres = frame.depth.flatMap { CentreSampler.distance(in: $0) }
+        if let centreMetres {
+            recentDistance = centreMetres
+        }
+        if closeRange {
+            band.follow(centreMetres)
+        }
+        if let depth = frame.depth {
+            updateHint(for: depth, at: frame.timestamp)
+        }
+    }
+
+    /// Asks Core's advisor about the square at the centre, and changes the hint only
+    /// once the new advice has held for `hintHoldSeconds`.
+    private func updateHint(for depth: DepthFrame, at timestamp: TimeInterval) {
+        let input = DepthQualityInput.centre(of: depth, recentDistance: recentDistance)
+        guard advice.update(PoorDepthAdvisor.advice(for: input), at: timestamp) else { return }
+        depthHint = advice.shown.hint
+        log.info(
+            "ui", "Depth hint changed",
+            ["hint": advice.shown.logName, "centre": ReadoutText.distance(metres: centreMetres)])
+        // Spoken by VoiceOver when it is on; ignored otherwise.
+        if let hint = depthHint {
+            UIAccessibility.post(notification: .announcement, argument: hint)
+        }
     }
 
     // The overlays are painted in the sensor's orientation, turned to match the

@@ -12,6 +12,9 @@ struct AppEnvironment: Sendable {
     let sensorFeed: any LiveCameraFeeding
     /// The saved scans (LibraryService, unit U05): the single owner of scan data.
     let library: ScanLibrary
+    /// Sweep capture with the depth sensor (U07). Shares the camera with Explore, so
+    /// only one of them runs at a time.
+    let sweepCapture: any LiveSweepCapturing
 
     /// The real app.
     @MainActor
@@ -22,7 +25,8 @@ struct AppEnvironment: Sendable {
             log: log,
             buildInfo: BuildInfo(infoDictionary: Bundle.main.infoDictionary ?? [:]),
             sensorFeed: LiveSensorFeed(log: log),
-            library: ScanLibrary(store: store, log: log, availableBytes: { store.availableCapacity() })
+            library: ScanLibrary(store: store, log: log, availableBytes: { store.availableCapacity() }),
+            sweepCapture: ARKitSweepCapture(log: log)
         )
     }
 
@@ -37,7 +41,8 @@ struct AppEnvironment: Sendable {
             log: log,
             buildInfo: BuildInfo(version: "0.1.0", build: "1", buildDate: Date().addingTimeInterval(-29 * 86_400)),
             sensorFeed: PreviewSensorFeed(),
-            library: ScanLibrary(store: MemoryScanStore(), log: log)
+            library: ScanLibrary(store: MemoryScanStore(), log: log),
+            sweepCapture: PreviewSweepCapture()
         )
     }
 }

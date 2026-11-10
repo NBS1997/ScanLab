@@ -11,6 +11,9 @@ struct LibraryView: View {
     @State private var renaming: Scan?
     @State private var draftName = ""
     @State private var deleting: LibraryRow?
+    /// The screens open on top of the list, so a new scan can be opened straight after
+    /// capture.
+    @State private var path = NavigationPath()
 
     init(environment: AppEnvironment) {
         self.environment = environment
@@ -18,11 +21,18 @@ struct LibraryView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             content
                 .navigationTitle("Scans")
                 .navigationDestination(for: UUID.self) { id in
                     ScanDetailView(model: ScanDetailModel(environment: environment, scanID: id))
+                }
+                .navigationDestination(for: LibraryDestination.self) { _ in
+                    // photoCapture: wired to the photo capture screen when that build merges.
+                    NewScanView(environment: environment, photoCapture: nil) { id in
+                        // Replace New scan with the new scan's detail; Back returns to the list.
+                        path = NavigationPath([id])
+                    }
                 }
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
@@ -38,6 +48,9 @@ struct LibraryView: View {
                                 .labelStyle(.titleAndIcon)
                         }
                         .accessibilityHint("Shows the live camera and depth sensor")
+                    }
+                    ToolbarItem(placement: .bottomBar) {
+                        newScanButton
                     }
                 }
                 .alert("Rename scan", isPresented: isRenaming) {
@@ -80,14 +93,25 @@ struct LibraryView: View {
             ContentUnavailableView {
                 Label("No scans yet", systemImage: "cube.transparent")
             } description: {
-                Text(
-                    "Scanning arrives in a later build. To try the library now, open Diagnostics "
-                        + "and add the sample model. Explore shows the live depth sensor.")
+                Text("Tap New scan to sweep something with the depth sensor. Explore shows the live depth sensor.")
+            } actions: {
+                newScanButton
             }
             .refreshable { await model.reload() }
         } else {
             list
         }
+    }
+
+    private var newScanButton: some View {
+        Button {
+            path.append(LibraryDestination.newScan)
+        } label: {
+            Label("New scan", systemImage: "plus")
+                .labelStyle(.titleAndIcon)
+        }
+        .buttonStyle(.borderedProminent)
+        .accessibilityHint("Choose how to capture a new scan")
     }
 
     private var list: some View {

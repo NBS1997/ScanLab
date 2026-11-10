@@ -31,6 +31,11 @@ struct ExploreView: View {
                 }
                 .padding()
             }
+            if let hint = model.depthHint, model.status == .running {
+                // Just below the centre ring, where the owner is already looking.
+                DepthHintBadge(text: hint)
+                    .offset(y: 46)
+            }
             StatusMessage(status: model.status)
         }
         .navigationTitle("Explore")
@@ -41,6 +46,7 @@ struct ExploreView: View {
         .onChange(of: model.showCamera) { _, isOn in model.layerChanged(.camera, isOn: isOn) }
         .onChange(of: model.showDepth) { _, isOn in model.layerChanged(.depth, isOn: isOn) }
         .onChange(of: model.showConfidence) { _, isOn in model.layerChanged(.confidence, isOn: isOn) }
+        .onChange(of: model.closeRange) { _, isOn in model.closeRangeChanged(isOn: isOn) }
     }
 }
 
@@ -110,6 +116,11 @@ private struct CentreMark: View {
 private struct ReadoutPanel: View {
     let model: ExploreModel
 
+    private var closeRangeTitle: String? {
+        guard model.closeRange else { return nil }
+        return "Close range \(CloseRangeBand.label(halfWidth: model.band.halfWidth))"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 16) {
@@ -128,7 +139,11 @@ private struct ReadoutPanel: View {
                     .accessibilityValue(model.frameRateSpoken)
             }
             if model.showDepth {
-                DepthLegend(map: model.depthColours)
+                if model.isWaitingForBand {
+                    Text("Close range: waiting for a reading at the centre").font(.caption2)
+                } else {
+                    DepthLegend(map: model.depthColours, title: closeRangeTitle)
+                }
             }
             if model.showConfidence {
                 ConfidenceLegend(map: model.confidenceColours)
@@ -139,29 +154,85 @@ private struct ReadoutPanel: View {
     }
 }
 
-/// The colour ramp with distances beneath (accessibility check A8).
+/// The colour ramp with distances beneath (accessibility check A8). A narrow
+/// close-range map shows its ends in millimetres, which say more than "0.8 m".
 private struct DepthLegend: View {
     let map: DepthColourMap
+    let title: String?
+
+    private var near: String { label(map.nearMetres) }
+    private var far: String { label(map.farMetres) }
 
     var body: some View {
         let stops = map.legendStops(count: 5)
         VStack(alignment: .leading, spacing: 2) {
+            if let title {
+                Text(title).font(.caption2.weight(.semibold))
+            }
             LinearGradient(colors: stops.map { Color(rgba: $0.colour) }, startPoint: .leading, endPoint: .trailing)
                 .frame(width: 200, height: 10)
                 .clipShape(Capsule())
             HStack {
-                Text("Near \(ReadoutText.legendDistance(metres: map.nearMetres))")
+                Text("Near \(near)")
                 Spacer()
-                Text("Far \(ReadoutText.legendDistance(metres: map.farMetres))")
+                Text("Far \(far)")
             }
             .font(.caption2)
             .frame(width: 200)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Depth colours")
-        .accessibilityValue(
-            "Red is near, \(ReadoutText.legendDistance(metres: map.nearMetres)). "
-                + "Blue is far, \(ReadoutText.legendDistance(metres: map.farMetres)). Grey is no reading.")
+        .accessibilityLabel(title ?? "Depth colours")
+        .accessibilityValue("Red is near, \(near). Blue is far, \(far). Grey is no reading.")
+    }
+
+    private func label(_ metres: Float) -> String {
+        map.isNarrow ? ReadoutText.distance(metres: metres) : ReadoutText.legendDistance(metres: metres)
+    }
+}
+
+/// "Move closer" or "Move back", when the depth at the centre is poor.
+private struct DepthHintBadge: View {
+    let text: String
+
+    var body: some View {
+        Label(text, systemImage: "exclamationmark.circle")
+            .font(.callout.weight(.semibold))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(.yellow, in: Capsule())
+            .foregroundStyle(.black)
+            .accessibilityLabel("Depth hint")
+            .accessibilityValue(text)
+    }
+}
+
+/// The close-range chip and, when it is on, the band width.
+private struct CloseRangeControls: View {
+    @Bindable var model: ExploreModel
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Toggle(isOn: $model.closeRange) {
+                Label("Close range", systemImage: "scope")
+            }
+            .toggleStyle(.button)
+            .buttonStyle(.bordered)
+            .accessibilityHint("Spreads the depth colours over a narrow band around the centre distance")
+            if model.closeRange {
+                Menu {
+                    ForEach(CloseRangeBand.halfWidthChoices, id: \.self) { choice in
+                        Button(CloseRangeBand.label(halfWidth: choice)) { model.setBandHalfWidth(choice) }
+                            .accessibilityLabel(CloseRangeBand.spokenLabel(halfWidth: choice))
+                    }
+                } label: {
+                    Text(CloseRangeBand.label(halfWidth: model.band.halfWidth))
+                        .monospacedDigit()
+                }
+                .buttonStyle(.bordered)
+                .accessibilityLabel("Band width")
+                .accessibilityValue(CloseRangeBand.spokenLabel(halfWidth: model.band.halfWidth))
+            }
+        }
     }
 }
 
@@ -210,6 +281,7 @@ private struct LayerControls: View {
                     }
                 }
             }
+            CloseRangeControls(model: model)
             Text("Edges: \(ExploreModel.edgesUnavailableReason.lowercased())")
                 .font(.caption2)
                 .accessibilityHidden(true)
