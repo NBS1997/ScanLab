@@ -26,3 +26,11 @@ custom_rules:
     regex: '\b(print|debugPrint|NSLog)\('
     message: "Use the Logging port (log.info / log.warning / log.error) instead of console output."
     severity: error
+
+  # `URL.path()` escapes spaces as "%20", so FileManager cannot find folders such as
+  # "Application Support". Use `fileSystemPath` (Core, Files/URL+FileSystemPath.swift).
+  no_escaped_file_path:
+    name: "No escaped file path"
+    regex: '\.path\(\)'
+    message: "Use url.fileSystemPath: path() escapes spaces, so FileManager looks in the wrong place."
+    severity: error

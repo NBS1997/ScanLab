@@ -126,9 +126,9 @@ struct MeshFilesTests {
         #expect(throws: MeshFileError.noSpace) {
             try MeshFiles.write(data, to: url, availableCapacity: 1_000)
         }
-        #expect(!FileManager.default.fileExists(atPath: url.path()))
+        #expect(!FileManager.default.fileExists(atPath: url.fileSystemPath))
         try MeshFiles.write(data, to: url, availableCapacity: 10_000_000_000)
-        #expect(FileManager.default.fileExists(atPath: url.path()))
+        #expect(FileManager.default.fileExists(atPath: url.fileSystemPath))
     }
 
     @Test("storage-full errors are recognised in their different forms")

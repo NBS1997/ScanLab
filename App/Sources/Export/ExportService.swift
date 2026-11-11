@@ -126,7 +126,7 @@ struct ExportService: Sendable {
             throw MeshFiles.classify(error)
         }
         let url = folder.appending(path: fileName)
-        if manager.fileExists(atPath: url.path()) {
+        if manager.fileExists(atPath: url.fileSystemPath) {
             try manager.removeItem(at: url)
         }
         let data = try MeshFiles.data(for: mesh, as: format)

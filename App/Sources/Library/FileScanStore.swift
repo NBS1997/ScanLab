@@ -64,7 +64,7 @@ struct FileScanStore: ScanStoring {
         let names: [String]
         do {
             try ensureRoot()
-            names = try manager.contentsOfDirectory(atPath: root.path())
+            names = try manager.contentsOfDirectory(atPath: root.fileSystemPath)
         } catch {
             throw StoreError.readFailed(error.localizedDescription)
         }
@@ -148,7 +148,7 @@ struct FileScanStore: ScanStoring {
         let destination = try existingFolder(id).appending(path: Self.rawCaptureName, directoryHint: .isDirectory)
         let manager = FileManager.default
         do {
-            if manager.fileExists(atPath: destination.path()) {
+            if manager.fileExists(atPath: destination.fileSystemPath) {
                 try manager.removeItem(at: destination)
             }
             try manager.moveItem(at: source, to: destination)
@@ -159,7 +159,7 @@ struct FileScanStore: ScanStoring {
 
     func reportData(for id: UUID) throws -> Data? {
         let url = try existingFolder(id).appending(path: Self.reportName)
-        guard FileManager.default.fileExists(atPath: url.path()) else { return nil }
+        guard FileManager.default.fileExists(atPath: url.fileSystemPath) else { return nil }
         do {
             return try Data(contentsOf: url)
         } catch {
@@ -179,7 +179,7 @@ struct FileScanStore: ScanStoring {
 
     func removeRawCapture(for id: UUID) throws {
         let raw = try existingFolder(id).appending(path: Self.rawCaptureName, directoryHint: .isDirectory)
-        guard FileManager.default.fileExists(atPath: raw.path()) else { return }
+        guard FileManager.default.fileExists(atPath: raw.fileSystemPath) else { return }
         do {
             try FileManager.default.removeItem(at: raw)
         } catch {
@@ -189,7 +189,7 @@ struct FileScanStore: ScanStoring {
 
     func rawCaptureFolder(for id: UUID) -> URL? {
         let raw = folder(for: id).appending(path: Self.rawCaptureName, directoryHint: .isDirectory)
-        return FileManager.default.fileExists(atPath: raw.path()) ? raw : nil
+        return FileManager.default.fileExists(atPath: raw.fileSystemPath) ? raw : nil
     }
 
     // MARK: - Helpers
@@ -200,7 +200,7 @@ struct FileScanStore: ScanStoring {
 
     private func existingFolder(_ id: UUID) throws -> URL {
         let url = folder(for: id)
-        guard FileManager.default.fileExists(atPath: url.path()) else { throw StoreError.notFound(id) }
+        guard FileManager.default.fileExists(atPath: url.fileSystemPath) else { throw StoreError.notFound(id) }
         return url
     }
 

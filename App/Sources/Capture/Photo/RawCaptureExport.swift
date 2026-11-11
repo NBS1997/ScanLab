@@ -65,7 +65,7 @@ struct RawCaptureExporter: Sendable {
             throw PhotoCaptureError.noSpace
         }
         let destination = folder.appending(path: name)
-        if manager.fileExists(atPath: destination.path()) {
+        if manager.fileExists(atPath: destination.fileSystemPath) {
             try manager.removeItem(at: destination)
         }
         var coordinationError: NSError?

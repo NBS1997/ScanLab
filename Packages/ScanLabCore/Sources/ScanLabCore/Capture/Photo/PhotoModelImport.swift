@@ -8,7 +8,8 @@ public enum PhotoModelImport {
     /// there are several (there should not be), the first by name is used, so the
     /// choice is always the same.
     public static func modelFile(in folder: URL) -> URL? {
-        guard let names = try? FileManager.default.contentsOfDirectory(atPath: folder.path()) else { return nil }
+        let manager = FileManager.default
+        guard let names = try? manager.contentsOfDirectory(atPath: folder.fileSystemPath) else { return nil }
         let objNames = names.filter { $0.lowercased().hasSuffix(".obj") }.sorted()
         return objNames.first.map { folder.appending(path: $0) }
     }

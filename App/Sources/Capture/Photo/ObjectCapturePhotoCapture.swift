@@ -86,7 +86,7 @@ struct ObjectCapturePhotoCapture: PhotoCapturing {
         // Start from an empty Model folder, so a file left by an earlier attempt can
         // never be mistaken for this build's result.
         let manager = FileManager.default
-        if manager.fileExists(atPath: capture.model.path()) {
+        if manager.fileExists(atPath: capture.model.fileSystemPath) {
             try manager.removeItem(at: capture.model)
         }
         try manager.createDirectory(at: capture.model, withIntermediateDirectories: true)

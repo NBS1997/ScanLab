@@ -70,11 +70,11 @@ public enum RawCaptureFiles {
     public static func prepareForKeeping(_ folders: RawCaptureFolders, detail: PhotoDetailLevel) throws -> Int64 {
         let manager = FileManager.default
         do {
-            let names = try manager.contentsOfDirectory(atPath: folders.root.path())
+            let names = try manager.contentsOfDirectory(atPath: folders.root.fileSystemPath)
             for name in names where !RawCaptureFolders.keptNames.contains(name) {
                 try manager.removeItem(at: folders.root.appending(path: name))
             }
-            let hasPositions = manager.fileExists(atPath: folders.cameraPositions.path())
+            let hasPositions = manager.fileExists(atPath: folders.cameraPositions.fileSystemPath)
             let text = readMe(images: imageCount(in: folders), hasPositions: hasPositions, detail: detail)
             try Data(text.utf8).write(to: folders.readMe, options: .atomic)
         } catch {
@@ -107,7 +107,7 @@ public enum RawCaptureFiles {
     /// they are only clutter (PC-8).
     public static func unfinished(in parent: URL) -> [UnfinishedCapture] {
         let manager = FileManager.default
-        guard let names = try? manager.contentsOfDirectory(atPath: parent.path()) else { return [] }
+        guard let names = try? manager.contentsOfDirectory(atPath: parent.fileSystemPath) else { return [] }
         var found: [UnfinishedCapture] = []
         for name in names where UUID(uuidString: name) != nil {
             let folders = RawCaptureFolders(root: parent.appending(path: name, directoryHint: .isDirectory))
@@ -140,7 +140,7 @@ public enum RawCaptureFiles {
     /// Removes a capture folder and everything in it. A folder already gone is fine.
     public static func discard(_ folders: RawCaptureFolders) throws {
         let manager = FileManager.default
-        guard manager.fileExists(atPath: folders.root.path()) else { return }
+        guard manager.fileExists(atPath: folders.root.fileSystemPath) else { return }
         do {
             try manager.removeItem(at: folders.root)
         } catch {

@@ -63,7 +63,7 @@ struct RawCaptureFilesTests {
         let parent = try TestMeshes.temporaryFolder()
         let folders = try makeCapture(in: parent, images: 20)
         let bytes = try RawCaptureFiles.prepareForKeeping(folders, detail: .reduced)
-        let names = Set(try FileManager.default.contentsOfDirectory(atPath: folders.root.path()))
+        let names = Set(try FileManager.default.contentsOfDirectory(atPath: folders.root.fileSystemPath))
         #expect(names == ["Images", "camera-positions.csv", "README.txt"])
         #expect(RawCaptureFiles.imageCount(in: folders) == 20)
         #expect(bytes == RawCaptureFiles.bytes(in: folders.root))
@@ -98,8 +98,8 @@ struct RawCaptureFilesTests {
         defer { TestMeshes.cleanUp(parent) }
         let manager = FileManager.default
         let hourAgo = Date(timeIntervalSinceNow: -3_600)
-        try manager.setAttributes([.modificationDate: hourAgo], ofItemAtPath: older.root.path())
-        try manager.setAttributes([.modificationDate: Date()], ofItemAtPath: newer.root.path())
+        try manager.setAttributes([.modificationDate: hourAgo], ofItemAtPath: older.root.fileSystemPath)
+        try manager.setAttributes([.modificationDate: Date()], ofItemAtPath: newer.root.fileSystemPath)
         let empty = RawCaptureFolders.new(in: parent)
         try manager.createDirectory(at: empty.images, withIntermediateDirectories: true)
         let other = parent.appending(path: "not-a-capture")
@@ -110,8 +110,8 @@ struct RawCaptureFilesTests {
         #expect(found.first?.folders == newer)
         #expect(found.first?.id == newer.id)
         #expect((found.first?.bytes ?? 0) > 0)
-        #expect(!manager.fileExists(atPath: empty.root.path()))
-        #expect(manager.fileExists(atPath: other.path()))
+        #expect(!manager.fileExists(atPath: empty.root.fileSystemPath))
+        #expect(manager.fileExists(atPath: other.fileSystemPath))
     }
 
     @Test("no parent folder means no unfinished captures")
@@ -132,7 +132,7 @@ struct RawCaptureFilesTests {
         let parent = try TestMeshes.temporaryFolder()
         let folders = try makeCapture(in: parent, images: 3)
         try RawCaptureFiles.discard(folders)
-        #expect(!FileManager.default.fileExists(atPath: folders.root.path()))
+        #expect(!FileManager.default.fileExists(atPath: folders.root.fileSystemPath))
         try RawCaptureFiles.discard(folders)
     }
 }

@@ -8,7 +8,7 @@
 - **State Version**: 7
 - **Active Agent**: aidlc-architect-agent
 - **Worktree Path**:
-- **Bolt Refs**: [photo-capture]
+- **Bolt Refs**: [empty list]
 - **Practices Affirmed Timestamp**: 2026-11-10T10:17:45Z
 
 ## Scope Configuration

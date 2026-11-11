@@ -15,7 +15,7 @@ struct CaliperStore: Sendable {
 
     /// The saved values, or an empty sheet when none have been saved yet.
     func load() throws -> CaliperSheet {
-        guard FileManager.default.fileExists(atPath: url.path()) else { return CaliperSheet() }
+        guard FileManager.default.fileExists(atPath: url.fileSystemPath) else { return CaliperSheet() }
         let data: Data
         do {
             data = try Data(contentsOf: url)

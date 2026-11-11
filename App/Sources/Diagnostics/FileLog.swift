@@ -72,7 +72,7 @@ actor FileLogStore {
             recordFailure("could not create log folder: \(error.localizedDescription)")
             return
         }
-        guard FileManager.default.fileExists(atPath: fileURL.path()) else { return }
+        guard FileManager.default.fileExists(atPath: fileURL.fileSystemPath) else { return }
         do {
             let text = try String(contentsOf: fileURL, encoding: .utf8)
             if let kept = LogTrimmer.trimmed(text) {
@@ -100,8 +100,8 @@ actor FileLogStore {
     private func write(_ event: LogEvent) {
         do {
             let line = try LogCodec.encode(event) + "\n"
-            if !FileManager.default.fileExists(atPath: fileURL.path()) {
-                FileManager.default.createFile(atPath: fileURL.path(), contents: nil)
+            if !FileManager.default.fileExists(atPath: fileURL.fileSystemPath) {
+                FileManager.default.createFile(atPath: fileURL.fileSystemPath, contents: nil)
             }
             let handle = try FileHandle(forWritingTo: fileURL)
             defer { try? handle.close() }
@@ -115,7 +115,7 @@ actor FileLogStore {
     }
 
     func read() -> LogReadResult {
-        guard FileManager.default.fileExists(atPath: fileURL.path()) else { return LogReadResult() }
+        guard FileManager.default.fileExists(atPath: fileURL.fileSystemPath) else { return LogReadResult() }
         do {
             lastReadError = nil
             return LogCodec.decode(text: try String(contentsOf: fileURL, encoding: .utf8))
