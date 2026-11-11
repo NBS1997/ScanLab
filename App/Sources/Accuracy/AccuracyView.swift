@@ -140,6 +140,7 @@ private struct ReportSections: View {
         }
         if report.isReliable {
             sizeClassSection
+            countedSection
         }
         Section {
             LabeledContent("Checked", value: report.createdAt.formatted(date: .abbreviated, time: .shortened))
@@ -164,6 +165,40 @@ private struct ReportSections: View {
                     + "(+ is outside), RMS the typical error, 95% the distance 95 in 100 points are within. "
                     + "These are surface distances, not feature sizes.")
         }
+    }
+
+    /// What the figures above are based on: the points counted and left out, and the
+    /// reference surface the scan did not reach, in the verdict's own words.
+    private var countedSection: some View {
+        Section {
+            if let measured = report.pointsMeasured, let excluded = report.pointsExcluded {
+                LabeledContent("Points counted", value: measured.formatted())
+                LabeledContent("Points left out", value: leftOutText(excluded))
+            } else {
+                Text("Points left out: unknown (an older report). Tap Check again to count them.")
+                    .font(.footnote)
+            }
+            LabeledContent("Reference with no scan nearby", value: AccuracyText.percent(report.uncoveredShare))
+            if let sentence = report.excludedSentence {
+                Text(sentence)
+                    .font(.footnote)
+            }
+            if let sentence = report.uncoveredSentence {
+                Text(sentence)
+                    .font(.footnote)
+            }
+        } header: {
+            Text("What was counted")
+        } footer: {
+            Text(
+                "Scan points too far from the reference shape are left out of every figure above, and parts of "
+                    + "the reference the scan did not reach are not measured at all.")
+        }
+    }
+
+    private func leftOutText(_ excluded: Int) -> String {
+        guard let share = report.excludedShare else { return excluded.formatted() }
+        return "\(excluded.formatted()) (\(AccuracyText.percent(share)))"
     }
 
     private var rows: [SizeClassResult] {

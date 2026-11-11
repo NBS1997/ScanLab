@@ -151,9 +151,9 @@ struct ScanDetailView: View {
                     LabeledContent(
                         "Saved", value: scan.createdAt.formatted(date: .abbreviated, time: .shortened))
                     LabeledContent("Reference object", value: scan.isReference ? "Yes" : "No")
-                    if scan.hasAccuracyReport {
-                        Label("Has an accuracy report", systemImage: "checkmark.seal.fill")
-                            .foregroundStyle(.green)
+                    if let seal = AccuracySeal(scan) {
+                        Label(seal.label, systemImage: seal.symbol)
+                            .foregroundStyle(seal.colour)
                     }
                 } footer: {
                     if !scan.isReference {

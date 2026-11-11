@@ -240,19 +240,25 @@ public actor ScanLibrary {
     }
 
     /// Stores an encoded accuracy report with the scan, replacing any earlier one, and
-    /// sets `hasAccuracyReport` (unit U10). The report is written before the manifest,
-    /// so the flag is never set for a report that is not there.
+    /// sets `hasAccuracyReport` and `accuracyVerdict` (the report's verdict level, as
+    /// text) (unit U10). The report is written before the manifest, so the flag is never
+    /// set for a report that is not there.
     @discardableResult
-    public func attachReport(_ report: Data, to id: UUID) throws -> Scan {
+    public func attachReport(_ report: Data, to id: UUID, verdict: String? = nil) throws -> Scan {
         do {
             var scan = try readManifest(id)
             try checkSpace(for: Int64(report.count))
             try store.replaceReport(report, for: id)
-            if !scan.hasAccuracyReport {
+            // The manifest keeps the new report's verdict level, so the list shows it;
+            // a report saved without one clears an older level rather than keep it.
+            if !scan.hasAccuracyReport || scan.accuracyVerdict != verdict {
                 scan.hasAccuracyReport = true
+                scan.accuracyVerdict = verdict
                 try store.replaceManifest(try ManifestCodec.encode(scan), for: id)
             }
-            log.info("library", "Accuracy report saved", ["scan": short(id), "bytes": String(report.count)])
+            log.info(
+                "library", "Accuracy report saved",
+                ["scan": short(id), "bytes": String(report.count), "verdict": verdict ?? "unknown"])
             return scan
         } catch {
             log.error("library", "Accuracy report not saved", ["scan": short(id), "reason": reason(error)])

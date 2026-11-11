@@ -24,6 +24,24 @@ struct AccuracyStorageTests {
         #expect(await log.readAll().events.last?.message == "Accuracy report saved")
     }
 
+    @Test("the report's verdict level is kept in the manifest, and replaced with each report")
+    func verdictLevel() async throws {
+        let store = MemoryScanStore()
+        let log = MemoryLog()
+        let library = ScanLibrary(store: store, log: log)
+        let scan = try await library.add(mesh: TestMeshes.cube(size: 0.05), method: .sweep)
+        let saved = try await library.attachReport(report, to: scan.id, verdict: "limited")
+        #expect(saved.accuracyVerdict == "limited")
+        #expect(try await library.scan(scan.id).accuracyVerdict == "limited")
+        #expect(await log.readAll().events.last?.details["verdict"] == "limited")
+        try await library.attachReport(report, to: scan.id, verdict: "good")
+        #expect(try await library.scan(scan.id).accuracyVerdict == "good")
+        // A report saved without a level clears the older one rather than keep it.
+        try await library.attachReport(report, to: scan.id)
+        let cleared = try await library.scan(scan.id)
+        #expect(cleared.hasAccuracyReport && cleared.accuracyVerdict == nil)
+    }
+
     @Test("a report for a missing scan, or on full storage, is refused and logged")
     func failures() async throws {
         let store = MemoryScanStore()

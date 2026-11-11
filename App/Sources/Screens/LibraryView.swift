@@ -171,8 +171,8 @@ struct LibraryView: View {
     }
 }
 
-/// One scan in the list: thumbnail, name, "method · date · size", and a tick when an
-/// accuracy report exists.
+/// One scan in the list: thumbnail, name, "method · date · size", and a seal showing
+/// the accuracy report's verdict when there is one.
 private struct ScanRow: View {
     let row: LibraryRow
 
@@ -189,10 +189,10 @@ private struct ScanRow: View {
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
-            if row.scan.hasAccuracyReport {
-                Image(systemName: "checkmark.seal.fill")
-                    .foregroundStyle(.green)
-                    .accessibilityLabel("Has an accuracy report")
+            if let seal = AccuracySeal(row.scan) {
+                Image(systemName: seal.symbol)
+                    .foregroundStyle(seal.colour)
+                    .accessibilityLabel(seal.label)
             }
         }
         .accessibilityElement(children: .combine)

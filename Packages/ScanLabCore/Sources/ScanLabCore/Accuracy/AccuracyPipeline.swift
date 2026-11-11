@@ -109,7 +109,8 @@ public enum AccuracyPipeline {
 
         let context = ReportContext(
             scanID: request.scanID, createdAt: request.createdAt, table: request.surface.reference.table,
-            rule: request.rule, caliperValuesEntered: request.caliperValuesEntered)
+            rule: request.rule, caliperValuesEntered: request.caliperValuesEntered,
+            inlierDistance: request.alignment.inlierDistance, coverageRadius: request.alignment.coverageRadius)
         var report = AccuracyReporting.makeReport(alignment: alignment, deviation: deviation, context: context)
         report.pointsUsed = points.count
         report.backgroundRemoved = isolated.removed

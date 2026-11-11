@@ -55,6 +55,9 @@ public struct MatchSummary: Codable, Equatable, Sendable {
 /// - less than half of the (background-removed) scan lies within 5 mm of the
 ///   reference: most of what was scanned is something else.
 ///
+/// A reliable report is rated at best limited (not good) when more than 10% of the
+/// scan was left out of the figures (`maximumExcludedShare`, business rule AC-19).
+///
 /// Coverage is the decisive test for "another object": after trimming, almost any
 /// shape can find *some* points close to the reference, but a different object cannot
 /// cover most of it.
@@ -67,6 +70,11 @@ public struct ReliabilityRule: Equatable, Sendable {
     public var goodCoverage = 0.8
     /// The verdict is good (not limited) when 95% of points are within this, metres.
     public var trustedSpread = 0.001
+    /// When more than this share of the scan (10%) is left out of the figures for being
+    /// further than the inlier distance from the reference, the verdict is at best
+    /// limited: a badly built area is simply dropped, which flatters the figures. This
+    /// is a first guess (owner and outside review, 2026-11-11), to be tuned on the phone.
+    public var maximumExcludedShare = 0.10
 
     public init() {}
 
@@ -89,6 +97,15 @@ public struct ReliabilityRule: Equatable, Sendable {
                     + "at least \(AccuracyText.percent(minimumInlierFraction)) is needed.")
         }
         return reasons
+    }
+
+    /// Why a reliable report is rated only limited because of the points left out, or
+    /// `nil` when few enough were left out.
+    public func excludedProblem(share: Double) -> String? {
+        guard share > maximumExcludedShare else { return nil }
+        return "\(AccuracyText.percent(share)) of the scan was left out of the figures, more than the "
+            + "\(AccuracyText.percent(maximumExcludedShare)) allowed for a good rating. Part of the scan may be "
+            + "badly built."
     }
 
     public func quality(rmsResidual: Double, coverage: Double, inlierFraction: Double) -> MatchQuality {
@@ -139,6 +156,11 @@ public enum AccuracyText {
         let size = millimetres(abs(value))
         if size == millimetres(0) { return size }
         return (value < 0 ? "\u{2212}" : "+") + size
+    }
+
+    /// A distance setting such as "5" or "2.5": no decimals for whole millimetres.
+    public static func shortMillimetres(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(0...1)).locale(australian))
     }
 
     /// "84%"

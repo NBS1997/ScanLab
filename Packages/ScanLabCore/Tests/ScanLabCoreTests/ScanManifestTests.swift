@@ -13,7 +13,7 @@ struct ScanManifestTests {
         let scan = Scan(
             name: "Hull section", method: .photos, createdAt: fixedDate, detailLevel: "reduced",
             faceCount: 48_200, size: Vec3(0.142, 0.096, 0.071), isReference: true, hasAccuracyReport: true,
-            rawCaptureBytes: 196_000_000)
+            accuracyVerdict: "limited", rawCaptureBytes: 196_000_000)
         let decoded = try ManifestCodec.decode(try ManifestCodec.encode(scan))
         #expect(decoded == scan)
         #expect(decoded.version == Scan.currentVersion)
@@ -42,7 +42,20 @@ struct ScanManifestTests {
         #expect(scan.size == nil)
         #expect(!scan.isReference)
         #expect(!scan.hasAccuracyReport)
+        #expect(scan.accuracyVerdict == nil)
         #expect(scan.createdAt == fixedDate)
+    }
+
+    @Test("an unreadable accuracy verdict is treated as unknown, not as a broken manifest")
+    func unreadableVerdict() throws {
+        let json = """
+            {"id": "\(UUID().uuidString)", "name": "Odd", "method": "sweep", "createdAt": "2026-11-11T14:05:30Z",
+             "hasAccuracyReport": true, "accuracyVerdict": 3}
+            """
+        let scan = try ManifestCodec.decode(Data(json.utf8))
+        #expect(scan.hasAccuracyReport && scan.accuracyVerdict == nil)
+        let written = try #require(String(bytes: try ManifestCodec.encode(scan), encoding: .utf8))
+        #expect(!written.contains("accuracyVerdict"))
     }
 
     @Test("fields added by a later build are ignored")

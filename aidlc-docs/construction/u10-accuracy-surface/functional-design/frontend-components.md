@@ -16,7 +16,8 @@ Inputs: `mockups.md` and `mockups.html` (screens 4 and 8, Reference object sheet
 |---|---|
 | Header | Scan name and method. |
 | Match (first) | Symbol and "Match good · 0.21 mm", then "Reference surface found 84%" and "Scan close to the shape 97%", then the verdict sentence. Unreliable: the verdict in red and each reason, and **no figures**. |
-| Surface error by size | Whole surface, Small (up to 5 mm), Medium (5–30 mm), Large (over 30 mm), Rest of the surface: Mean (signed), RMS, 95% (±), Points. Footer explains the columns and that these are surface distances, not feature sizes. Only when reliable. |
+| Surface error by size | Measured surface (was Whole surface; changed 2026-11-11), Small (up to 5 mm), Medium (5–30 mm), Large (over 30 mm), Rest of the surface: Mean (signed), RMS, 95% (±), Points. Footer explains the columns and that these are surface distances, not feature sizes. Only when reliable. |
+| What was counted | Points counted, points left out (count and share), reference with no scan nearby (share), and the verdict's own sentences for the left-out and uncovered shares. Older reports say "Points left out: unknown (an older report). Tap Check again to count them." Only when reliable. *Added 2026-11-11.* |
 | Your measurements | "No caliper values yet…" prompt, or "Caliper values: 12 entered"; **Reference object…** opens the sheet. |
 | Details | Checked (date), scan points, background removed, alignment rounds. |
 | Bottom bar | **Check again**, or **Cancel** while running. |

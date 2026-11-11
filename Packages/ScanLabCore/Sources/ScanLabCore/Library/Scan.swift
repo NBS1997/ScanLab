@@ -49,6 +49,10 @@ public struct Scan: Identifiable, Equatable, Sendable {
     public var isReference: Bool
     /// Whether an accuracy report is stored with the scan (unit U10).
     public var hasAccuracyReport: Bool
+    /// The stored report's verdict level ("good", "limited" or "unreliable"), so the
+    /// library list can show it without opening the report. Plain text so the library
+    /// does not depend on the accuracy code; `nil` for scans checked by older builds.
+    public var accuracyVerdict: String?
     /// How much storage the kept raw capture uses, or `nil` when there is none (FR-6.6).
     public var rawCaptureBytes: Int64?
 
@@ -62,6 +66,7 @@ public struct Scan: Identifiable, Equatable, Sendable {
         size: Vec3? = nil,
         isReference: Bool = false,
         hasAccuracyReport: Bool = false,
+        accuracyVerdict: String? = nil,
         rawCaptureBytes: Int64? = nil
     ) {
         self.version = Self.currentVersion
@@ -74,6 +79,7 @@ public struct Scan: Identifiable, Equatable, Sendable {
         self.size = size
         self.isReference = isReference
         self.hasAccuracyReport = hasAccuracyReport
+        self.accuracyVerdict = accuracyVerdict
         self.rawCaptureBytes = rawCaptureBytes
     }
 }
@@ -90,6 +96,7 @@ extension Scan: Codable {
         case size
         case isReference
         case hasAccuracyReport
+        case accuracyVerdict
         case rawCaptureBytes
     }
 
@@ -107,6 +114,8 @@ extension Scan: Codable {
         size = try container.decodeIfPresent(Vec3.self, forKey: .size)
         isReference = try container.decodeIfPresent(Bool.self, forKey: .isReference) ?? false
         hasAccuracyReport = try container.decodeIfPresent(Bool.self, forKey: .hasAccuracyReport) ?? false
+        // Forgiving: anything unreadable here just means the level is unknown.
+        accuracyVerdict = try? container.decodeIfPresent(String.self, forKey: .accuracyVerdict)
         rawCaptureBytes = try container.decodeIfPresent(Int64.self, forKey: .rawCaptureBytes)
     }
 
@@ -122,6 +131,7 @@ extension Scan: Codable {
         try container.encodeIfPresent(size, forKey: .size)
         try container.encode(isReference, forKey: .isReference)
         try container.encode(hasAccuracyReport, forKey: .hasAccuracyReport)
+        try container.encodeIfPresent(accuracyVerdict, forKey: .accuracyVerdict)
         try container.encodeIfPresent(rawCaptureBytes, forKey: .rawCaptureBytes)
     }
 }

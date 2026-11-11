@@ -16,7 +16,11 @@ struct AccuracyReportTests {
         #expect(report.isReliable && report.reasons.isEmpty)
         #expect(report.match.quality == .good)
         #expect(try #require(report.overall).rmsMillimetres < 0.01)
-        #expect(report.verdict.hasPrefix("The surface is within ±0.00 mm"))
+        #expect(report.verdict.hasPrefix("The measured surface is within ±0.00 mm"))
+        #expect(report.verdictLevel == .good && !report.verdict.contains("is not counted"))
+        #expect(report.overall?.label == "Measured surface")
+        let counted = try #require(report.pointsMeasured) + (try #require(report.pointsExcluded))
+        #expect(counted == report.pointsUsed - report.backgroundRemoved)
         #expect(report.verdict.hasSuffix("These are surface distances, not feature sizes."))
         #expect(report.pointsUsed == 3000 && report.caliperValuesEntered == 3)
         #expect(report.transform.count == 12)
@@ -87,7 +91,7 @@ struct AccuracyReportTests {
         let overall = try row(nil, within95: 0.00062)
         let text = AccuracyReporting.verdict(overall: overall, classes: classes)
         let expected =
-            "The surface is within ±0.62 mm of the true shape for 95% of points; "
+            "The measured surface is within ±0.62 mm of the true shape for 95% of the points counted; "
             + "least accurate on small features (±0.90 mm). These are surface distances, not feature sizes."
         #expect(text == expected)
         let large = try row(.large, within95: 0.001)
@@ -135,6 +139,8 @@ struct AccuracyReportTests {
             + #""startsTried":36,"quality":"fair"},"future":true}"#
         let old = try AccuracyReportCodec.decode(Data(minimal.utf8))
         #expect(old.version == 1 && !old.isReliable && old.verdictLevel == .unreliable && old.transform.isEmpty)
+        #expect(old.pointsMeasured == nil && old.pointsExcluded == nil && old.excludedShare == nil)
+        #expect(report.version == 2)
         #expect(throws: StoreError.self) { try AccuracyReportCodec.decode(Data("{}".utf8)) }
     }
 

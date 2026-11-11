@@ -45,7 +45,8 @@ struct AccuracyService: Sendable {
             } onCancel: {
                 worker.cancel()
             }
-            try await library.attachReport(try AccuracyReportCodec.encode(report), to: scanID)
+            try await library.attachReport(
+                try AccuracyReportCodec.encode(report), to: scanID, verdict: report.verdictLevel.rawValue)
             log.info("accuracy", "Accuracy check finished", details(report, scanID: scanID, started: started))
             return report
         } catch is CancellationError {
@@ -71,7 +72,8 @@ struct AccuracyService: Sendable {
     }
 
     /// Everything about a run worth keeping in the diagnostics log: the match figures,
-    /// the verdict, each size class's 95% figure and how long each step took.
+    /// the verdict, the points counted and left out, each size class's 95% figure and
+    /// how long each step took.
     private func details(_ report: AccuracyReport, scanID: UUID, started: Date) -> [String: String] {
         let match = report.match
         var details = [
@@ -81,7 +83,15 @@ struct AccuracyService: Sendable {
             "iterations": String(match.iterations), "starts": String(match.startsTried),
             "points": String(report.pointsUsed), "background": String(report.backgroundRemoved),
             "calipers": String(report.caliperValuesEntered), "ms": milliseconds(since: started),
+            "uncovered": AccuracyText.percent(report.uncoveredShare),
         ]
+        if let measured = report.pointsMeasured, let excluded = report.pointsExcluded {
+            details["measured"] = String(measured)
+            details["excluded"] = String(excluded)
+        }
+        if let share = report.excludedShare {
+            details["excludedShare"] = AccuracyText.percent(share)
+        }
         for row in report.sizeClasses {
             details["p95Mm." + row.id] = AccuracyText.millimetres(row.within95Millimetres, decimals: 3)
         }
