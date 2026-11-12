@@ -26,7 +26,7 @@
 ## Execution Plan Summary
 - **Total Stages**: 21
 - **Completed**: 15
-- **In Progress**: functional-design, nfr-requirements, nfr-design, code-generation (per Bolt; Bolts 1-8 and 13 merged, 9-12 remain)
+- **In Progress**: functional-design, nfr-requirements, nfr-design, code-generation (per Bolt; Bolts 1-8, 10a and 13 merged; 9, 10, 11 and 12 remain)
 
 ## Runtime State
 - **Revision Count**: 0
@@ -69,7 +69,7 @@
 - [x] delivery-planning — EXECUTE
 
 ### CONSTRUCTION PHASE
-Per Bolt (bolt-plan.md): functional-design, nfr-requirements, nfr-design and code-generation run once per Bolt; build-and-test and ci-pipeline run once after Bolt 12. Merged: Bolts 1-8 (walking-skeleton, reference-object, geometry-export, live-sensor-view, scan-library, sweep-capture, photo-capture, accuracy-surface), plus fixes fix-file-paths and accuracy-honesty, and Bolt 13 depth-fusion (added 2026-11-12 at the decision point after step 4). Remaining: Bolts 9-12 (accuracy-features, capture-guidance, edge-detection, hardware-details). TestFlight: build 7.
+Per Bolt (bolt-plan.md): functional-design, nfr-requirements, nfr-design and code-generation run once per Bolt; build-and-test and ci-pipeline run once after Bolt 12. Merged: Bolts 1-8 (walking-skeleton, reference-object, geometry-export, live-sensor-view, scan-library, sweep-capture, photo-capture, accuracy-surface), plus fixes fix-file-paths and accuracy-honesty, and Bolt 13 depth-fusion and Bolt 10a subject-box (both added 2026-11-12 from owner feedback). Remaining: Bolts 9-12 (accuracy-features, the rest of capture-guidance, edge-detection, hardware-details). TestFlight: build 8.
 - [-] functional-design — EXECUTE
 - [-] nfr-requirements — EXECUTE
 - [-] nfr-design — EXECUTE
@@ -93,9 +93,9 @@ Per Bolt (bolt-plan.md): functional-design, nfr-requirements, nfr-design and cod
 - **Next Stage**: nfr-requirements
 - **Status**: Running
 - **Construction Autonomy Mode**: autonomous
-- **Last Updated**: 2026-11-12T10:56:44Z
+- **Last Updated**: 2026-11-12T11:43:58Z
 
 ## Session Resume Point
 - **Last Completed Stage**: delivery-planning
-- **Next Action**: Owner tests build 7 (depth fusion) with docs/checklists/bolt-13-depth-fusion.md and reports on photo capture; then step 5: Bolt 9 accuracy-features and Bolt 10 capture-guidance
+- **Next Action**: Owner tests build 8 (subject box and coverage dome) with docs/checklists/bolt-10a-subject-box.md and reports on photo capture; then step 5: Bolt 9 accuracy-features and the rest of Bolt 10 capture-guidance
 - **Pending Artifacts**: none
