@@ -6,7 +6,7 @@
 - **Scope**: mvp
 - **Start Date**: 2026-11-10T09:32:30Z
 - **State Version**: 7
-- **Active Agent**: aidlc-architect-agent
+- **Active Agent**: aidlc-developer-agent
 - **Worktree Path**:
 - **Bolt Refs**: [empty list]
 - **Practices Affirmed Timestamp**: 2026-11-10T10:17:45Z
@@ -25,8 +25,8 @@
 
 ## Execution Plan Summary
 - **Total Stages**: 21
-- **Completed**: 14
-- **In Progress**: functional-design
+- **Completed**: 15
+- **In Progress**: functional-design, nfr-requirements, nfr-design, code-generation (per Bolt; Bolts 1-8 of 12 merged)
 
 ## Runtime State
 - **Revision Count**: 0
@@ -35,10 +35,10 @@
 ## Phase Progress
 <!-- Status values: Pending, Active, Verified, Skipped -->
 
-- **Initialization**: Active
-- **Ideation**: Pending
-- **Inception**: Pending
-- **Construction**: Pending
+- **Initialization**: Verified
+- **Ideation**: Verified
+- **Inception**: Verified
+- **Construction**: Active
 - **Operation**: Skipped
 
 ## Stage Progress
@@ -69,12 +69,12 @@
 - [x] delivery-planning — EXECUTE
 
 ### CONSTRUCTION PHASE
-Per unit: [TBD]
+Per Bolt (bolt-plan.md): functional-design, nfr-requirements, nfr-design and code-generation run once per Bolt; build-and-test and ci-pipeline run once after Bolt 12. Merged: Bolts 1-8 (walking-skeleton, reference-object, geometry-export, live-sensor-view, scan-library, sweep-capture, photo-capture, accuracy-surface), plus fixes fix-file-paths and accuracy-honesty. Remaining: Bolts 9-12 (accuracy-features, capture-guidance, edge-detection, hardware-details). TestFlight: build 6.
 - [-] functional-design — EXECUTE
-- [ ] nfr-requirements — EXECUTE
-- [ ] nfr-design — EXECUTE
-- [ ] infrastructure-design — EXECUTE
-- [ ] code-generation — EXECUTE
+- [-] nfr-requirements — EXECUTE
+- [-] nfr-design — EXECUTE
+- [x] infrastructure-design — EXECUTE
+- [-] code-generation — EXECUTE
 - [ ] build-and-test — EXECUTE
 - [ ] ci-pipeline — EXECUTE
 
@@ -93,9 +93,9 @@ Per unit: [TBD]
 - **Next Stage**: nfr-requirements
 - **Status**: Running
 - **Construction Autonomy Mode**: autonomous
-- **Last Updated**: 2026-11-10T10:57:20Z
+- **Last Updated**: 2026-11-12T09:51:08Z
 
 ## Session Resume Point
 - **Last Completed Stage**: delivery-planning
-- **Next Action**: Execute Functional Design
+- **Next Action**: Owner tests builds 5-6 on the phone and the photo-capture fault is fixed; then step 5: Bolt 9 accuracy-features and Bolt 10 capture-guidance
 - **Pending Artifacts**: none
