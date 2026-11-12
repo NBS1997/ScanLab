@@ -71,10 +71,12 @@ public struct SweepProgress: Equatable, Sendable {
     public var fusedFrames: Int
     /// True once fusion memory is full and new areas are no longer added (DF-6).
     public var fusionFull: Bool
+    /// Which directions round the subject box have been seen (CD-3), once a box is locked.
+    public var coverage: CoverageSummary?
 
     public init(
         anchorCount: Int = 0, faceCount: Int = 0, elapsed: TimeInterval = 0, tracking: SweepTracking = .normal,
-        fusedFrames: Int = 0, fusionFull: Bool = false
+        fusedFrames: Int = 0, fusionFull: Bool = false, coverage: CoverageSummary? = nil
     ) {
         self.anchorCount = anchorCount
         self.faceCount = faceCount
@@ -82,17 +84,22 @@ public struct SweepProgress: Equatable, Sendable {
         self.tracking = tracking
         self.fusedFrames = fusedFrames
         self.fusionFull = fusionFull
+        self.coverage = coverage
     }
 
     public static let zero = SweepProgress()
 
     /// The prompt shown over the camera, or nil. A tracking problem matters most, because
-    /// nothing is added while tracking is limited; next comes full fusion memory (DF-6).
+    /// nothing is added while tracking is limited; next comes full fusion memory (DF-6),
+    /// then where to go next round the subject (CD-4).
     public var prompt: String? {
         if let trackingPrompt = tracking.prompt {
             return trackingPrompt
         }
-        return fusionFull ? Self.fusionFullPrompt : nil
+        if fusionFull {
+            return Self.fusionFullPrompt
+        }
+        return coverage?.prompt
     }
 
     public static let fusionFullPrompt = "Detail memory full. Finish now, or start again closer to the subject."

@@ -35,6 +35,15 @@ public struct FusionSettings: Equatable, Sendable {
 
     public static let standard = FusionSettings()
 
+    /// Inside a subject box (SB-7): memory goes to the subject alone, so the cubes can be
+    /// finer. The band is narrower to match, but still wider than the sensor's noise.
+    public static let boxed: FusionSettings = {
+        var settings = FusionSettings()
+        settings.voxelSize = 0.003
+        settings.band = 0.012
+        return settings
+    }()
+
     /// For the diagnostics log (DF-10).
     public var logDetails: [String: String] {
         [

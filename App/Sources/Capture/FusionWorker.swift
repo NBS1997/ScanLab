@@ -42,10 +42,11 @@ final class FusionWorker: @unchecked Sendable {
     private var fusion = DepthFusion()
     private var busySeconds = 0.0
 
-    /// Throws away anything fused and starts again with `settings`.
-    func reset(settings: FusionSettings = .standard) {
+    /// Throws away anything fused and starts again with `settings`, fusing only inside
+    /// `region` when one is given (the subject box, SB-7).
+    func reset(settings: FusionSettings = .standard, region: Box? = nil) {
         queue.async { [self] in
-            fusion = DepthFusion(settings: settings)
+            fusion = DepthFusion(settings: settings, region: region)
             busySeconds = 0
         }
     }
@@ -70,7 +71,7 @@ final class FusionWorker: @unchecked Sendable {
                 let extraction = ProcessInfo.processInfo.systemUptime - start
                 let stats = fusion.stats
                 let average = stats.framesFused > 0 ? busySeconds / Double(stats.framesFused) * 1_000 : 0
-                fusion = DepthFusion(settings: fusion.settings)
+                fusion = DepthFusion(settings: fusion.settings, region: fusion.region)
                 busySeconds = 0
                 continuation.resume(
                     returning: Outcome(

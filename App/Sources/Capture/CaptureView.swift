@@ -25,6 +25,9 @@ struct CaptureView: View {
             SweepCameraView(capture: model.capture)
                 .ignoresSafeArea()
                 .accessibilityHidden(true)
+            if model.acceptsSubjectTaps {
+                subjectTapLayer
+            }
             if isSideways {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading) {
@@ -34,8 +37,7 @@ struct CaptureView: View {
                     Spacer()
                     VStack(alignment: .trailing) {
                         Spacer()
-                        stats
-                        finishButton
+                        bottomControls
                     }
                 }
                 .padding()
@@ -43,8 +45,7 @@ struct CaptureView: View {
                 VStack {
                     topBar
                     Spacer()
-                    stats
-                    finishButton
+                    bottomControls
                 }
                 .padding()
             }
@@ -54,6 +55,10 @@ struct CaptureView: View {
             CaptureStateOverlay(model: model, onDone: onDone)
         }
         .statusBarHidden()
+        // A success buzz the first time every direction is covered (CD-5).
+        .sensoryFeedback(.success, trigger: model.coverage?.isComplete ?? false) { wasComplete, isComplete in
+            !wasComplete && isComplete
+        }
         .onAppear { model.start() }
         .onDisappear { model.screenGone() }
         .onChange(of: model.phase) { _, phase in
@@ -98,6 +103,68 @@ struct CaptureView: View {
                 Spacer()
             }
         }
+    }
+
+    /// Catches taps on the camera picture while choosing the subject (SB-2). The tap's
+    /// position is in the same points as the camera view, which also fills the screen.
+    private var subjectTapLayer: some View {
+        GeometryReader { geometry in
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture(coordinateSpace: .local) { location in
+                    Task { await model.tapped(at: location, in: geometry.size) }
+                }
+        }
+        .ignoresSafeArea()
+        .accessibilityLabel("Camera picture")
+        .accessibilityHint("Tap the part you want to scan, or choose Scan everything")
+    }
+
+    /// While choosing: the box controls. While scanning: coverage, counts and Finish.
+    @ViewBuilder
+    private var bottomControls: some View {
+        if model.choice.isScanning {
+            if let coverage = model.coverage {
+                CoverageRingView(summary: coverage)
+            }
+            stats
+            finishButton
+        } else if model.phase == .capturing {
+            subjectControls
+        }
+    }
+
+    private var subjectControls: some View {
+        VStack(spacing: 10) {
+            if case .proposed = model.choice.stage {
+                HStack(spacing: 10) {
+                    controlButton("Smaller") { model.resize(by: 0.9) }
+                    controlButton("Bigger") { model.resize(by: 1.1) }
+                }
+                Button {
+                    model.lockSubject()
+                } label: {
+                    Text("Scan this")
+                        .font(.headline)
+                        .frame(minWidth: 160, minHeight: 44)
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityHint("Scans only what is inside the yellow box")
+            }
+            controlButton("Scan everything") { model.scanEverything() }
+                .accessibilityHint("Scans the whole view without a box")
+        }
+    }
+
+    private func controlButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.callout.weight(.semibold))
+                .padding(.horizontal, 14)
+                .frame(minHeight: 44)
+        }
+        .buttonStyle(.plain)
+        .background(.ultraThinMaterial, in: Capsule())
     }
 
     private var stats: some View {

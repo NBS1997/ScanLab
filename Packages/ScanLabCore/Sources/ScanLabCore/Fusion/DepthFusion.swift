@@ -42,11 +42,14 @@ public struct FusedMesh: Equatable, Sendable {
 /// Not thread-safe: the App keeps one instance on one serial queue.
 public final class DepthFusion {
     public let settings: FusionSettings
+    /// When set, only cubes inside this box are fused (SB-7): the subject box.
+    public let region: Box?
     public private(set) var stats = FusionStats()
     var volume: VoxelVolume
 
-    public init(settings: FusionSettings = .standard) {
+    public init(settings: FusionSettings = .standard, region: Box? = nil) {
         self.settings = settings
+        self.region = region
         volume = VoxelVolume(voxelSize: settings.voxelSize, maximumBlocks: settings.maximumBlocks)
     }
 
@@ -68,7 +71,12 @@ public final class DepthFusion {
                 guard let weight = weight(of: depth, column: column, row: row) else { continue }
                 let metres = Double(depth.depths[row * depth.width + column])
                 let local = frame.cameraPoint(column: column, row: row, depth: metres)
-                fuseReading(towards: frame.cameraToWorld.apply(to: local), in: frame, weight: weight)
+                let surface = frame.cameraToWorld.apply(to: local)
+                // A reading that lands well outside the box cannot change a cube inside it.
+                if let region, !region.contains(surface, tolerance: settings.band) {
+                    continue
+                }
+                fuseReading(towards: surface, in: frame, weight: weight)
                 used += 1
             }
         }
@@ -126,8 +134,11 @@ public final class DepthFusion {
             travelled += halfStep
             guard index != previous else { continue }
             previous = index
-            guard let inFront = distanceInFront(of: volume.centre(of: index), in: frame), inFront >= -band
-            else { continue }
+            let centre = volume.centre(of: index)
+            if let region, !region.contains(centre) {
+                continue
+            }
+            guard let inFront = distanceInFront(of: centre, in: frame), inFront >= -band else { continue }
             volume.add(
                 distance: Float(min(inFront, band) / band), weight: Float(weight), to: index,
                 maximumWeight: Float(settings.maximumWeight))

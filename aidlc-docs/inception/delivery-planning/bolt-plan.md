@@ -23,6 +23,7 @@ builds and delivers to TestFlight.
 | 4 | Bolt 7 | `photo-capture` | U08 | Parallel batch |
 | 4 | Bolt 8 | `accuracy-surface` | U10 | Parallel batch |
 | 4b | Bolt 13 | `depth-fusion` | U14 | Solo (added 2026-11-12) |
+| 4c | Bolt 10a | `subject-box` | U09 (part 1) | Solo (added 2026-11-12) |
 | 5 | Bolt 9 | `accuracy-features` | U11 | Parallel batch |
 | 5 | Bolt 10 | `capture-guidance` | U09 | Parallel batch |
 | 6 | Bolt 11 | `edge-detection` | U12 | Parallel batch |
@@ -151,6 +152,20 @@ Q2-B): it follows the gate mode chosen after the walking skeleton.
 - **Expected demo:** sweep the reference object and a kayak fitting; compare with a
   build 6 scan of the same subject.
 - **Stories:** US-06 (sweep capture, improved).
+
+### Bolt 10a — Subject box and coverage dome (U09 part 1) · `subject-box` (added 2026-11-12)
+- **Why:** owner feedback on build 7: fusion gives more detail, but the sweep needs a way
+  to isolate the object and guide a full scan round it. The owner approved bringing the
+  first part of Bolt 10 forward and asked for a vision model (segmentation).
+- **Bolt DoD:** tap the part to box it (Vision subject mask plus depth, supporting surface
+  cut away), resize and lock; fusion only inside the box at 3 mm; coverage dome with
+  prompts and a completion buzz; Scan everything keeps the build 7 behaviour; box fitting
+  and coverage proven on synthetic scenes in the build; device checklist.
+- **Confidence hypothesis:** "Boxing the subject and showing which sides are missing gives
+  a complete, clean scan of a part without the table or background."
+- **Stories:** US-08 (part), US-06.
+- **Left for Bolt 10 proper:** tones and spoken alerts, interrupted captures kept with
+  Continue and Build, move closer / move back during capture.
 
 ### Bolt 9 — Accuracy stage 2 (U11) · `accuracy-features`
 - **Bolt DoD:** per-feature caliper-versus-scan table, error by feature kind,

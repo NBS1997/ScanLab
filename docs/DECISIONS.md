@@ -488,6 +488,28 @@ on the GPU (faster, but untestable in CI and harder to read; kept in reserve if 
 shows the CPU is too slow). Marching cubes (needs 256-case tables and gives more, thinner
 triangles than surface nets). Dense grid (memory grows with the cube of the scan size).
 
+## ADR-030: Isolate the sweep subject with Vision's subject mask and a world box
+
+**Date:** 2026-11 (Bolt 10a)
+**Status:** Active
+**Context:** Fused sweeps (ADR-029) include the table and background, and the owner had
+no way to tell which sides of the part were still missing. The owner asked for a vision
+model such as segmentation.
+**Decision:** On a tap, run Vision's foreground instance mask request
+(`VNGenerateForegroundInstanceMaskRequest`, the "lift subject" model built into iOS) on
+the camera picture, keep the depth readings inside the tapped object's outline, find the
+supporting surface from the other readings, and fit an upright, world-aligned box. Fuse
+only inside the box, at 3 mm. Guide coverage with a 24-direction dome around the box.
+**Consequences:** Box fitting runs once per tap (Vision takes a fraction of a second);
+nothing per frame. The box is aligned with the world, not the part, so a long part at 45°
+gets a roomier box. The underside resting on the surface is never seen. When Vision
+finds nothing, a cruder depth-only pick is used.
+**Alternatives rejected:** A box drawn by hand with drag handles (slow and fiddly on a
+phone at arm's length). Masking every depth picture with Vision (tens of milliseconds a
+frame on top of fusion; kept for hand-held scanning later). A third-party segmentation
+model (ADR-008: no third-party code, and none is needed). ARKit plane detection for the
+surface (another moving part; the depth readings already show it).
+
 ---
 
 Format for new entries:
