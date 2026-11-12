@@ -25,6 +25,7 @@ refined into Units during Inception.
 | 9 | B10 | Edge detection from the camera, shown over the live view or the scan | Must | Edges cannot be tied to real positions usefully | B2 | S3 |
 | 10 | B11 | Hardware findings: every sensing capability exercised, limits written down | Must | Hardware remains a black box | B2, B5, B10 | S3 |
 | 11 | B12 | Regular rebuild and redelivery so the app does not expire | Should | App stops opening (R9) | B1 | S4 |
+| 6b | B17 | Detailed sweep: fuse the raw depth readings into the model (added 2026-11-12, owner feedback on build 6: sweep scans too rough) | Must | Sweep detail limited by the platform's room-scale mesh | B2 | S1, S2 |
 | — | B13 | Measuring between two points in the app | Won't (this time) | — | B2 | — |
 | — | B14 | Multi-camera offset correction | Won't (this time) | — | B6 results | — |
 | — | B15 | Colour and surface appearance on the model | Could, if cheap | — | B5 | — |

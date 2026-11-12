@@ -468,6 +468,26 @@ removed when the picker finishes.
 **Alternatives rejected:** SwiftUI `.fileExporter` (less control over the saved name and
 the temporary file).
 
+## ADR-029: Build sweep models by fusing raw depth in Core
+
+**Date:** 2026-11 (Bolt 13)
+**Status:** Active
+**Context:** Build 6 sweep scans were rough. They came from ARKit's scene mesh, which is
+made for rooms and smooths away anything smaller than a few centimetres. The LiDAR depth
+picture itself (256 × 192 readings with confidence, many times a second) holds far more
+detail.
+**Decision:** Fuse the depth pictures into a sparse signed-distance grid (4 mm cubes) in
+Core, in plain Swift on the CPU, and draw the surface with surface nets. The scene mesh
+is kept only as a fallback and as the live coverage wireframe.
+**Consequences:** One CPU core is busy while sweeping; pictures that arrive while busy
+are skipped. Memory is capped (about 60 MB). Every threshold is a first guess to be
+tuned on the reference object. Fine features under about 5 mm stay beyond LiDAR alone;
+photos remain the path for those.
+**Alternatives rejected:** Keep the scene mesh (the cause of the problem). Metal compute
+on the GPU (faster, but untestable in CI and harder to read; kept in reserve if the phone
+shows the CPU is too slow). Marching cubes (needs 256-case tables and gives more, thinner
+triangles than surface nets). Dense grid (memory grows with the cube of the scan size).
+
 ---
 
 Format for new entries:

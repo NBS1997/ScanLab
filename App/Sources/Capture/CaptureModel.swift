@@ -26,13 +26,13 @@ final class CaptureModel {
             capture: environment.sweepCapture, library: environment.library, log: environment.log)
     }
 
-    /// The tracking prompt, shown only while capturing.
+    /// The tracking or fusion-memory prompt, shown only while capturing.
     var prompt: String? {
         guard phase == .capturing else { return nil }
         if status == .interrupted {
             return status.message
         }
-        return progress.tracking.prompt
+        return progress.prompt
     }
 
     var statsText: String { CaptureText.stats(progress) }

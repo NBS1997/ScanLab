@@ -67,17 +67,35 @@ public struct SweepProgress: Equatable, Sendable {
     /// Seconds since capturing began.
     public var elapsed: TimeInterval
     public var tracking: SweepTracking
+    /// Depth pictures fused into the detailed model so far (U14, DF-9).
+    public var fusedFrames: Int
+    /// True once fusion memory is full and new areas are no longer added (DF-6).
+    public var fusionFull: Bool
 
     public init(
-        anchorCount: Int = 0, faceCount: Int = 0, elapsed: TimeInterval = 0, tracking: SweepTracking = .normal
+        anchorCount: Int = 0, faceCount: Int = 0, elapsed: TimeInterval = 0, tracking: SweepTracking = .normal,
+        fusedFrames: Int = 0, fusionFull: Bool = false
     ) {
         self.anchorCount = anchorCount
         self.faceCount = faceCount
         self.elapsed = elapsed
         self.tracking = tracking
+        self.fusedFrames = fusedFrames
+        self.fusionFull = fusionFull
     }
 
     public static let zero = SweepProgress()
+
+    /// The prompt shown over the camera, or nil. A tracking problem matters most, because
+    /// nothing is added while tracking is limited; next comes full fusion memory (DF-6).
+    public var prompt: String? {
+        if let trackingPrompt = tracking.prompt {
+            return trackingPrompt
+        }
+        return fusionFull ? Self.fusionFullPrompt : nil
+    }
+
+    public static let fusionFullPrompt = "Detail memory full. Finish now, or start again closer to the subject."
 }
 
 /// The two streams a running sweep produces. Progress arrives often and only the

@@ -20,10 +20,14 @@ import UIKit
 ///   blocks about a metre across, each with its own small mesh, and keeps refining
 ///   them while the phone moves. `SweepReceiver` keeps the latest version of each on a
 ///   private background queue and reports counts to the screen.
-/// - **Finish** pauses the session, then, still on that queue, copies every anchor's
-///   corners and triangles into Core `MeshPart`s and merges them with Core's
-///   `MeshAssembly` (moved into world positions, seams joined, empty faces dropped).
-///   The result is y-up metres; `SweepCaptureService` turns it z-up and saves it.
+/// - **The detailed model** (U14, ADR-029) comes from the LiDAR's own depth pictures,
+///   not from that coarse room-scale surface. While tracking is normal, each depth
+///   picture, with the camera's position and lens numbers, is handed to a
+///   `FusionWorker`, which fuses it into Core's `DepthFusion` grid in the background.
+/// - **Finish** pauses the session, merges the platform's pieces with Core's
+///   `MeshAssembly` (kept as a fallback), then asks the worker to draw the fused
+///   surface. The fused model is returned unless fusion produced nothing (DF-7). Both
+///   are y-up metres; `SweepCaptureService` turns the result z-up and saves it.
 @MainActor
 final class ARKitSweepCapture: LiveSweepCapturing {
     private let receiver: SweepReceiver
@@ -71,6 +75,13 @@ final class ARKitSweepCapture: LiveSweepCapturing {
         configuration.sceneReconstruction = .mesh
         // Gravity is the platform's y axis, so "up" in the scan is truly up.
         configuration.worldAlignment = .gravity
+        // Depth pictures for fusion (U14). Every LiDAR phone supports this; if not, the
+        // sweep still works and falls back to the scene mesh (DF-7).
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+            configuration.frameSemantics.insert(.sceneDepth)
+        } else {
+            log.warning("capture", "Depth pictures unsupported", ["fallback": "scene mesh"])
+        }
         let session = cameraView().session
         session.delegate = receiver
         session.delegateQueue = receiver.queue
@@ -79,7 +90,7 @@ final class ARKitSweepCapture: LiveSweepCapturing {
         // If the owner has not yet been asked, ARKit asks for camera permission here.
         session.run(configuration, options: [.resetTracking, .removeExistingAnchors, .resetSceneReconstruction])
         isRunning = true
-        log.info("capture", "Sweep session started", ["reconstruction": "mesh"])
+        log.info("capture", "Sweep session started", ["reconstruction": "mesh", "fusion": "depth pictures"])
         return streams
     }
 
@@ -90,7 +101,20 @@ final class ARKitSweepCapture: LiveSweepCapturing {
         session.pause()
         let assembled = await receiver.assemble()
         log.info("capture", "Sweep mesh assembled", assembled.report.logDetails)
-        return assembled.mesh
+        let outcome = await receiver.finishFusion()
+        log.info("capture", "Fusion finished", outcome.logDetails)
+        let sceneFaces = String(assembled.mesh.faceCount)
+        guard !outcome.fused.mesh.isEmpty else {
+            log.warning(
+                "capture", "Sweep model chosen",
+                ["source": "scene mesh", "reason": "fusion produced no surface", "faces": sceneFaces])
+            return assembled.mesh
+        }
+        let fusedFaces = String(outcome.fused.mesh.faceCount)
+        log.info(
+            "capture", "Sweep model chosen",
+            ["source": "depth fusion", "faces": fusedFaces, "scene mesh faces": sceneFaces])
+        return outcome.fused.mesh
     }
 
     func cancel() {
@@ -142,6 +166,13 @@ final class SweepReceiver: NSObject, @unchecked Sendable {
     private var lastSent: TimeInterval = -.infinity
     private var hasReportedRunning = false
 
+    // Fusion (U14). Only touched on `queue`, like everything above.
+    private let fusion = FusionWorker()
+    private var fusionBusy = false
+    private var fusedFrames = 0
+    private var skippedFrames = 0
+    private var fusionFull = false
+
     init(log: any Logging) {
         self.log = log
     }
@@ -159,6 +190,12 @@ final class SweepReceiver: NSObject, @unchecked Sendable {
             startTime = nil
             lastSent = -.infinity
             hasReportedRunning = false
+            fusion.reset()
+            fusionBusy = false
+            fusedFrames = 0
+            skippedFrames = 0
+            fusionFull = false
+            log.info("capture", "Fusion started", FusionSettings.standard.logDetails)
         }
     }
 
@@ -167,6 +204,7 @@ final class SweepReceiver: NSObject, @unchecked Sendable {
         queue.async { [self] in
             log.info("capture", "Sweep session stopped", ["anchors": String(anchors.count), "kept": "no"])
             anchors = [:]
+            fusion.reset()
             endStreams()
         }
     }
@@ -184,6 +222,17 @@ final class SweepReceiver: NSObject, @unchecked Sendable {
                 continuation.resume(returning: assembled)
             }
         }
+    }
+
+    /// Draws the fused surface once every picture handed over has been fused, and adds
+    /// how many pictures were skipped.
+    func finishFusion() async -> FusionWorker.Outcome {
+        let skipped = await withCheckedContinuation { continuation in
+            queue.async { [self] in continuation.resume(returning: skippedFrames) }
+        }
+        var outcome = await fusion.finish()
+        outcome.skippedPictures = skipped
+        return outcome
     }
 
     private func endStreams() {
@@ -208,57 +257,38 @@ final class SweepReceiver: NSObject, @unchecked Sendable {
         lastSent = now
         let elapsed = startTime.map { now - $0 } ?? 0
         progress?.yield(
-            SweepProgress(anchorCount: anchors.count, faceCount: faceCount, elapsed: elapsed, tracking: tracking))
+            SweepProgress(
+                anchorCount: anchors.count, faceCount: faceCount, elapsed: elapsed, tracking: tracking,
+                fusedFrames: fusedFrames, fusionFull: fusionFull))
     }
 
-    // MARK: - Copying ARKit's mesh buffers
+    // MARK: - Feeding fusion (U14)
 
-    /// Copies one anchor's surface into a Core `MeshPart`.
-    ///
-    /// The corners and triangles live in graphics-memory buffers ("Metal buffers"). The
-    /// buffer is read through a raw pointer: each corner is three 32-bit floats at
-    /// `offset + stride × number`; each triangle is three corner numbers, each
-    /// `bytesPerIndex` bytes long. Positions are relative to the anchor; its
-    /// `transform` (a 4 × 4 matrix, stored column by column) moves them into the world.
-    static func part(from anchor: ARMeshAnchor) -> MeshPart? {
-        let geometry = anchor.geometry
-        let source = geometry.vertices
-        let faces = geometry.faces
-        guard source.format == .float3, faces.indexCountPerPrimitive == 3,
-            faces.bytesPerIndex == 4 || faces.bytesPerIndex == 2
-        else { return nil }
-
-        let vertexBytes = source.buffer.contents()
-        var vertices: [Vec3] = []
-        vertices.reserveCapacity(source.count)
-        for number in 0..<source.count {
-            let start = source.offset + source.stride * number
-            let x = vertexBytes.loadUnaligned(fromByteOffset: start, as: Float.self)
-            let y = vertexBytes.loadUnaligned(fromByteOffset: start + 4, as: Float.self)
-            let z = vertexBytes.loadUnaligned(fromByteOffset: start + 8, as: Float.self)
-            vertices.append(Vec3(Double(x), Double(y), Double(z)))
+    /// Hands one depth picture to the fusion worker, unless tracking is unsure (the
+    /// camera position would be wrong) or the last picture is still being fused (DF-5).
+    private func feedFusion(_ frame: ARFrame) {
+        guard progress != nil, case .normal = frame.camera.trackingState else { return }
+        guard !fusionBusy else {
+            skippedFrames += 1
+            return
         }
-
-        let indexBytes = faces.buffer.contents()
-        let width = faces.bytesPerIndex
-        func corner(_ position: Int) -> Int {
-            let offset = position * width
-            if width == 2 {
-                return Int(indexBytes.loadUnaligned(fromByteOffset: offset, as: UInt16.self))
-            }
-            return Int(indexBytes.loadUnaligned(fromByteOffset: offset, as: UInt32.self))
+        // Copied now, so the frame itself is not kept: holding frames stalls the camera.
+        guard let picture = Self.fusionFrame(from: frame) else { return }
+        fusionBusy = true
+        fusion.integrate(picture) { [weak self] stats in
+            self?.queue.async { self?.pictureFused(stats) }
         }
-        var triangles: [Triangle] = []
-        triangles.reserveCapacity(faces.count)
-        for face in 0..<faces.count {
-            triangles.append(Triangle(corner(face * 3), corner(face * 3 + 1), corner(face * 3 + 2)))
-        }
+    }
 
-        let matrix = anchor.transform
-        let columns = [matrix.columns.0, matrix.columns.1, matrix.columns.2, matrix.columns.3]
-        let values = columns.flatMap { [Double($0.x), Double($0.y), Double($0.z), Double($0.w)] }
-        guard let transform = Transform(columnMajor: values) else { return nil }
-        return MeshPart(vertices: vertices, triangles: triangles, transform: transform)
+    private func pictureFused(_ stats: FusionStats) {
+        fusionBusy = false
+        fusedFrames = stats.framesFused
+        if stats.isFull && !fusionFull {
+            fusionFull = true
+            let details = ["blocks": String(stats.blocks), "pictures": String(stats.framesFused)]
+            log.warning("capture", "Fusion memory full", details)
+        }
+        sendProgress(force: false)
     }
 
     static func tracking(for state: ARCamera.TrackingState) -> SweepTracking {
@@ -286,8 +316,9 @@ extension SweepReceiver: ARSessionDelegate {
     // `nonisolated` so Swift does not assume they run on the main thread.
 
     nonisolated func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        // Only the first frame matters here: it means the camera is running. The frame
-        // itself is not kept, because holding frames stalls the camera.
+        // Every frame's depth picture may be fused; the frame itself is not kept.
+        feedFusion(frame)
+        // The first frame also means the camera is running.
         guard !hasReportedRunning, progress != nil else { return }
         hasReportedRunning = true
         startTime = ProcessInfo.processInfo.systemUptime

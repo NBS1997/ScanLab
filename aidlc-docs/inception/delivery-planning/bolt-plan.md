@@ -22,6 +22,7 @@ builds and delivers to TestFlight.
 | 4 | Bolt 6 | `sweep-capture` | U07 | Parallel batch |
 | 4 | Bolt 7 | `photo-capture` | U08 | Parallel batch |
 | 4 | Bolt 8 | `accuracy-surface` | U10 | Parallel batch |
+| 4b | Bolt 13 | `depth-fusion` | U14 | Solo (added 2026-11-12) |
 | 5 | Bolt 9 | `accuracy-features` | U11 | Parallel batch |
 | 5 | Bolt 10 | `capture-guidance` | U09 | Parallel batch |
 | 6 | Bolt 11 | `edge-detection` | U12 | Parallel batch |
@@ -136,6 +137,20 @@ Once Bolts 6–8 are merged, the Bolt summary reports the first accuracy figures
 capture methods and recommends whether to continue as planned, bring multi-camera
 correction (B14) forward, or redirect. **This is not a forced stop** (owner's choice,
 Q2-B): it follows the gate mode chosen after the walking skeleton.
+
+### Bolt 13 — Depth fusion (U14) · `depth-fusion` (added 2026-11-12)
+- **Why:** owner feedback on build 6 at the decision point: sweep scans save and open but
+  are rough and lack detail. The sweep used the platform's room-scale scene mesh; this
+  Bolt builds the model from the LiDAR's own depth readings instead. Runs before step 5
+  so that Bolt 9 measures the improved model. Owner approved "fusion first".
+- **Bolt DoD:** sweep saves a fused model; fusion proven on synthetic plane and sphere
+  data in the build; fallback to the scene mesh when fusion has nothing; fusion counts and
+  timings in the diagnostics log; device checklist.
+- **Confidence hypothesis:** "Fusing the raw depth readings gives a visibly more detailed
+  surface, within a few millimetres, than the platform's scene mesh."
+- **Expected demo:** sweep the reference object and a kayak fitting; compare with a
+  build 6 scan of the same subject.
+- **Stories:** US-06 (sweep capture, improved).
 
 ### Bolt 9 — Accuracy stage 2 (U11) · `accuracy-features`
 - **Bolt DoD:** per-feature caliper-versus-scan table, error by feature kind,

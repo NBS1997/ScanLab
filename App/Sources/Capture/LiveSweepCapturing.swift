@@ -20,7 +20,7 @@ final class PreviewSweepCapture: LiveSweepCapturing {
         let (statuses, statusContinuation) = AsyncStream.makeStream(of: SensorStatus.self)
         statusContinuation.yield(.running)
         statusContinuation.finish()
-        progressContinuation.yield(SweepProgress(anchorCount: 4, faceCount: 12_480, elapsed: 12))
+        progressContinuation.yield(SweepProgress(anchorCount: 4, faceCount: 12_480, elapsed: 12, fusedFrames: 48))
         progressContinuation.finish()
         return SweepStreams(progress: progress, statuses: statuses)
     }
