@@ -5,17 +5,6 @@ import ScanLabCore
 import SwiftUI
 import UIKit
 
-/// Where the platform's guided capture has got to, for the buttons under it.
-enum PhotoGuidedStep: Equatable {
-    case starting
-    /// Looking for the object; `startDetecting` is tried automatically.
-    case lookingForObject
-    /// A box is around the object; the owner adjusts it, then starts.
-    case objectFound
-    case capturing
-    case finishing
-}
-
 /// What the photo capture screen shows (US-07, FR-4, FR-6.6), kept apart from the view.
 ///
 /// The steps are: check the phone and camera → guided capture with Apple's Object
@@ -31,7 +20,9 @@ final class PhotoCaptureModel {
     /// otherwise, so the camera is released before building (Apple's advice: building
     /// needs the memory).
     private(set) var session: ObjectCaptureSession?
-    private(set) var step = PhotoGuidedStep.starting
+    /// Follows the platform's capture state (Core's `PhotoSessionTracker`).
+    private(set) var tracker = PhotoSessionTracker()
+    var step: PhotoGuidedStep { tracker.step }
     /// Set when the platform could not find a flat surface under the object.
     private(set) var detectHint: String?
     /// The platform's current advice, for example "Move slower".
@@ -145,10 +136,15 @@ final class PhotoCaptureModel {
         let session = ObjectCaptureSession()
         var configuration = ObjectCaptureSession.Configuration()
         configuration.checkpointDirectory = folders.checkpoint
-        session.start(imagesDirectory: folders.images, configuration: configuration)
+        tracker = PhotoSessionTracker()
         self.session = session
-        log.info("photo", "Capture started", ["capture": String(folders.id.prefix(8))])
+        // Listen first, start, then read the state once: the session can become ready
+        // before the listener hears anything, and then "ready" would be missed (the
+        // build 8 fault: only Cancel under the aiming brackets). A repeat is ignored.
         observe(session)
+        session.start(imagesDirectory: folders.images, configuration: configuration)
+        log.info("photo", "Capture started", ["capture": String(folders.id.prefix(8))])
+        handle(session.state)
     }
 
     /// Follows the session's state, shot count, advice and scan-pass dial. Each loop
@@ -182,11 +178,31 @@ final class PhotoCaptureModel {
     }
 
     func handle(_ state: ObjectCaptureSession.CaptureState) {
-        switch state {
-        case .initializing:
-            step = .starting
-        case .ready:
-            step = .lookingForObject
+        let plain = PhotoSessionState(state)
+        guard let plain else {
+            log.warning("photo", "Unrecognised capture state")
+            return
+        }
+        let before = tracker.lastState
+        let action = tracker.observe(plain)
+        if before != plain {
+            log.info("photo", "Session state", ["state": plain.logName, "step": String(describing: tracker.step)])
+        }
+        switch plain {
+        case .detecting:
+            detectHint = nil
+        case .capturing where before != .capturing:
+            log.info("photo", "Taking photos")
+        default:
+            break
+        }
+        perform(action, for: state)
+    }
+
+    /// Carries out what the tracker asked for after a state change.
+    func perform(_ action: PhotoSessionAction?, for state: ObjectCaptureSession.CaptureState) {
+        switch action {
+        case .startDetecting:
             // Puts a box round the object in the middle of the picture. Fails (returns
             // false) when no flat surface is found under it.
             if session?.startDetecting() == false {
@@ -194,22 +210,19 @@ final class PhotoCaptureModel {
                 log.info("photo", "Object not found yet")
             } else {
                 detectHint = nil
+                log.info("photo", "Looking for the object")
             }
-        case .detecting:
-            step = .objectFound
-            detectHint = nil
-        case .capturing:
-            step = .capturing
-            log.info("photo", "Taking photos")
-        case .finishing:
-            step = .finishing
+        case .captureFinishing:
             apply(.captureFinishing)
-        case .completed:
+        case .captureCompleted:
             captureCompleted()
-        case .failed(let error):
-            captureFailed(error)
-        @unknown default:
-            log.warning("photo", "Unrecognised capture state")
+        case .captureFailed:
+            if case .failed(let error) = state {
+                log.error("photo", "Capture session failed", ["reason": describe(error)])
+                captureFailed(error)
+            }
+        case nil:
+            break
         }
     }
 
@@ -329,5 +342,22 @@ enum PhotoCaptureAdvice {
             (.objectNotFlippable, "This object should not be turned over"),
         ]
         return ordered.first { feedback.contains($0.0) }?.1
+    }
+}
+
+extension PhotoSessionState {
+    /// The platform's state without its error, for Core's tracker; nil for a state this
+    /// build does not know.
+    init?(_ state: ObjectCaptureSession.CaptureState) {
+        switch state {
+        case .initializing: self = .initialising
+        case .ready: self = .ready
+        case .detecting: self = .detecting
+        case .capturing: self = .capturing
+        case .finishing: self = .finishing
+        case .completed: self = .completed
+        case .failed: self = .failed
+        @unknown default: return nil
+        }
     }
 }

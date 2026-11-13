@@ -125,7 +125,10 @@ private struct GuidedCaptureArea: View {
                     .font(.headline)
                     .accessibilityAddTraits(.updatesFrequently)
             }
-            if case .capturing(let shots) = model.flow.phase {
+            Text(model.tracker.instruction)
+                .font(.callout)
+                .multilineTextAlignment(.center)
+            if model.tracker.showsPhotoCount, case .capturing(let shots) = model.flow.phase {
                 Text(PhotoBuildText.photos(shots))
                     .monospacedDigit()
                     .accessibilityLabel("Photos taken: \(shots)")
